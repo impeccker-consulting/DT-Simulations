@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<!-- saved from url=(0078)file:///D:/Rajesh%20Back%20up/Downloads/mle_logistic_regression_simulator.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Evidence Room — From MLE to Logistic Regression</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link href="./From MLE to Logistic Regression_files/css2" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14201C;
+    --bg-deep: #0F1815;
+    --panel: #1D2C27;
+    --panel-2: #223530;
+    --paper: #F3ECDA;
+    --paper-dim: #DDD3B8;
+    --ink: #F3ECDA;
+    --ink-dim: #9FB0AA;
+    --ink-faint: #6C7C77;
+    --gold: #D8A93B;
+    --gold-soft: rgba(216,169,59,0.18);
+    --teal: #4FA396;
+    --teal-soft: rgba(79,163,150,0.18);
+    --rust: #C15B4A;
+    --rust-soft: rgba(193,91,74,0.18);
+    --line: #33463F;
+    --radius: 14px;
+    --shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--paper);
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  a{color:var(--gold);}
+
+  /* ---------- layout shell ---------- */
+  .shell{
+    display:grid;
+    grid-template-columns:236px 1fr;
+    max-width:1320px;
+    margin:0 auto;
+  }
+  @media (max-width:920px){
+    .shell{grid-template-columns:1fr;}
+  }
+
+  /* ---------- step rail ---------- */
+  .rail{
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    padding:32px 18px 32px 28px;
+    border-right:1px solid var(--line);
+    overflow-y:auto;
+  }
+  @media (max-width:920px){
+    .rail{
+      position:sticky;
+      height:auto;
+      top:0;
+      z-index:50;
+      background:var(--bg-deep);
+      border-right:none;
+      border-bottom:1px solid var(--line);
+      padding:12px 16px;
+      display:flex;
+      gap:6px;
+      overflow-x:auto;
+    }
+  }
+  .rail-brand{
+    font-family:'Fraunces', serif;
+    font-size:14px;
+    color:var(--ink-dim);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-bottom:28px;
+  }
+  @media (max-width:920px){ .rail-brand{display:none;} }
+  .step{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    padding:10px 10px;
+    border-radius:10px;
+    text-decoration:none;
+    color:var(--ink-dim);
+    font-size:14px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:all .2s ease;
+    white-space:nowrap;
+  }
+  .step:hover{background:var(--panel);}
+  .step.active{
+    background:var(--panel-2);
+    border-color:var(--line);
+    color:var(--paper);
+  }
+  .step .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--gold);
+    min-width:18px;
+  }
+
+  /* ---------- main content ---------- */
+  main{padding:0 0 80px 0;}
+  .hero{
+    padding:88px 56px 56px 56px;
+    border-bottom:1px solid var(--line);
+  }
+  @media (max-width:920px){ .hero{padding:48px 24px;} }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:clamp(32px,4.4vw,54px);
+    line-height:1.05;
+    margin:0 0 20px 0;
+    max-width:14ch;
+  }
+  .hero p.lede{
+    font-size:18px;
+    color:var(--ink-dim);
+    max-width:62ch;
+    margin:0 0 8px 0;
+  }
+
+  section.chapter{
+    padding:64px 56px;
+    border-bottom:1px solid var(--line);
+  }
+  @media (max-width:920px){ section.chapter{padding:44px 24px;} }
+  .chapter-head{margin-bottom:28px;}
+  .chapter-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:10px;
+  }
+  .chapter-head h2{
+    font-size:clamp(24px,3vw,34px);
+    margin:0 0 14px 0;
+  }
+  .chapter-head p{
+    color:var(--ink-dim);
+    max-width:70ch;
+    font-size:16px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:26px;
+    box-shadow:var(--shadow);
+  }
+  .grid-2{
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width:820px){ .grid-2{grid-template-columns:1fr;} }
+
+  .term{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--gold-soft);
+    border:1px solid rgba(216,169,59,0.35);
+    color:var(--paper);
+    padding:3px 10px 3px 8px;
+    border-radius:999px;
+    font-size:13px;
+    margin:2px 4px 2px 0;
+  }
+  .term b{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--gold);
+    font-size:11px;
+    letter-spacing:0.05em;
+  }
+  .glossary{
+    border-left:3px solid var(--gold);
+    background:var(--panel-2);
+    border-radius:0 10px 10px 0;
+    padding:16px 18px;
+    margin:18px 0;
+    font-size:14.5px;
+    color:var(--ink-dim);
+  }
+  .glossary b{color:var(--paper);}
+
+  label.field-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:13.5px;
+    color:var(--ink-dim);
+    margin-bottom:6px;
+  }
+  label.field-label .val{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--gold);
+  }
+  input[type=range]{
+    width:100%;
+    accent-color:var(--gold);
+    height:6px;
+    margin:6px 0 18px 0;
+  }
+  .control{margin-bottom:4px;}
+
+  button.btn{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--bg-deep);
+    background:var(--gold);
+    border:none;
+    padding:11px 18px;
+    border-radius:9px;
+    cursor:pointer;
+    transition:transform .15s ease, filter .15s ease;
+  }
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn:active{transform:scale(0.98);}
+  button.btn.ghost{
+    background:transparent;
+    color:var(--paper);
+    border:1px solid var(--line);
+  }
+  button.btn.ghost:hover{border-color:var(--gold); color:var(--gold);}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+
+  canvas{width:100%; display:block;}
+
+  .readout-row{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+  .readout{
+    flex:1;
+    min-width:120px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .readout .label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-faint);
+    margin-bottom:4px;
+  }
+  .readout .value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:19px;
+    color:var(--paper);
+  }
+  .readout .value.gold{color:var(--gold);}
+  .readout .value.teal{color:var(--teal);}
+  .readout .value.rust{color:var(--rust);}
+
+  /* evidence meter (signature element) */
+  .meter-wrap{margin-top:18px;}
+  .meter-label{
+    display:flex; justify-content:space-between;
+    font-size:12px; color:var(--ink-faint);
+    text-transform:uppercase; letter-spacing:0.08em;
+    margin-bottom:8px;
+  }
+  .meter-track{
+    position:relative;
+    height:34px;
+    border-radius:999px;
+    background:var(--bg-deep);
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .meter-fill{
+    position:absolute; left:0; top:0; bottom:0;
+    background:linear-gradient(90deg, var(--rust), var(--gold) 60%, var(--teal));
+    border-radius:999px;
+    transition:width .25s ease;
+  }
+  .meter-badge{
+    position:absolute; top:50%; transform:translate(-50%,-50%);
+    width:44px; height:44px;
+    border-radius:50%;
+    background:var(--bg-deep);
+    border:3px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; color:var(--paper);
+    box-shadow:0 0 0 4px var(--panel);
+    transition:left .25s ease;
+  }
+  .meter-marker{
+    position:absolute; top:-4px; bottom:-4px;
+    width:2px; background:var(--paper);
+    opacity:0.5;
+  }
+
+  .pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .pill{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:5px 10px;
+    border-radius:8px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+  }
+  .pill.pass{color:var(--teal); border-color:rgba(79,163,150,0.4);}
+  .pill.fail{color:var(--rust); border-color:rgba(193,91,74,0.4);}
+
+  .legend{display:flex; gap:18px; font-size:13px; color:var(--ink-dim); margin-top:10px; flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:11px; height:11px; border-radius:3px; display:inline-block;}
+
+  .note{
+    font-size:13.5px; color:var(--ink-faint); margin-top:10px;
+  }
+
+  .callout{
+    background:var(--teal-soft);
+    border:1px solid rgba(79,163,150,0.4);
+    border-radius:10px;
+    padding:16px 18px;
+    font-size:14.5px;
+    color:var(--paper);
+    margin-top:18px;
+  }
+  .callout b{color:var(--teal);}
+
+  .summary-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+    margin-top:8px;
+  }
+  @media (max-width:820px){ .summary-grid{grid-template-columns:1fr;} }
+  .summary-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .summary-card .k{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--gold);
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .summary-card p{color:var(--ink-dim); font-size:14.5px; margin:0;}
+
+  footer{
+    padding:40px 56px;
+    color:var(--ink-faint);
+    font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ================= STEP RAIL ================= -->
+  <nav class="rail" id="rail">
+    <div class="rail-brand">MLE Lab</div>
+    <a class="step" data-target="s0">Start</a>
+    <a class="step active" data-target="s1"><span class="num">01</span> The Problem</a>
+    <a class="step" data-target="s2"><span class="num">02</span> MLE, Intuitively</a>
+    <a class="step" data-target="s3"><span class="num">03</span> Odds &amp; Logit</a>
+    <a class="step" data-target="s4"><span class="num">04</span> The S-Curve</a>
+    <a class="step" data-target="s5"><span class="num">05</span> Full Simulator</a>
+    <a class="step" data-target="s6"><span class="num">06</span> Takeaways</a>
+  </nav>
+
+  <main>
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="s0">
+      <div class="eyebrow">Machine Learning for Data-Driven Decision Making</div>
+      <h1>The Evidence Room</h1>
+      <p class="lede">Every logistic regression is really a detective story: you have some evidence (your data), a suspect list of possible parameters, and a rule for picking the parameter that makes the evidence <b>most believable</b>. That rule is called <b>Maximum Likelihood Estimation</b>, or MLE.</p>
+      <p class="lede">This module builds that idea from scratch — no calculus required — using sliders, live numbers, and one running business example: <b>will a student pass, based on hours studied?</b> The same logic applies to "will a customer buy" or "will a borrower default."</p>
+    </section>
+
+    <!-- ================= STEP 1: THE PROBLEM ================= -->
+    <section class="chapter" id="s1">
+      <div class="chapter-head">
+        <div class="chapter-eyebrow">Step 01</div>
+        <h2>Why a straight line breaks on Yes/No questions</h2>
+        <p>Suppose you want to predict whether a customer <b>buys</b> (1) or <b>doesn't</b> (0), based on how many minutes they spent on a product page. Ordinary regression fits a straight line through 0s and 1s — and that line keeps going, forever, in both directions.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <canvas id="chartProblem" height="480" width="690" style="height: 320px;"></canvas>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--teal)"></span>Bought (1)</span>
+            <span><span class="swatch" style="background:var(--rust)"></span>Didn't buy (0)</span>
+            <span><span class="swatch" style="background:var(--paper-dim)"></span>Straight-line fit (OLS)</span>
+          </div>
+          <div class="btn-row">
+            <button class="btn ghost" id="btnProblemToggle">Show where the line breaks</button>
+          </div>
+        </div>
+        <div>
+          <div class="glossary">
+            <b>The break:</b> A straight line can predict a "probability" of buying that is <b>−18%</b> or <b>140%</b>. Probabilities can only live between 0% and 100% — a straight line simply doesn't know that rule.
+          </div>
+          <div class="glossary">
+            <b>The fix, in one sentence:</b> instead of fitting a straight line to 0/1 outcomes, we fit a bendy, S-shaped curve that is mathematically forced to stay between 0 and 1 — and we use MLE to choose <i>which</i> S-curve fits best. Steps 2–5 build exactly that, piece by piece.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 2: MLE INTUITION ================= -->
+    <section class="chapter" id="s2">
+      <div class="chapter-head">
+        <div class="chapter-eyebrow">Step 02</div>
+        <h2>MLE, before any regression: the salesperson's closing rate</h2>
+        <p>A salesperson makes <b>10 pitches</b>. You watch the outcomes below: <span class="term"><b>1</b>sale</span> or <span class="term"><b>0</b>no sale</span>. You don't know the salesperson's true closing probability <span class="mono">p</span> — but you can <b>guess a value of p, and ask: "how likely was it that I'd see exactly this outcome, if p were really this?"</b> That question, asked and answered for every possible p, is the entire idea of Maximum Likelihood.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="pill-row" id="pitchRow"><span class="pill pass">SALE</span><span class="pill pass">SALE</span><span class="pill fail">no sale</span><span class="pill pass">SALE</span><span class="pill pass">SALE</span><span class="pill pass">SALE</span><span class="pill fail">no sale</span><span class="pill pass">SALE</span><span class="pill fail">no sale</span><span class="pill pass">SALE</span></div>
+          <div class="control">
+            <label class="field-label">Your guess for the closing probability, p <span class="val" id="pVal">0.50</span></label>
+            <input type="range" id="pSlider" min="1" max="99" value="50" step="1">
+          </div>
+          <div class="readout-row">
+            <div class="readout"><div class="label">Likelihood of this data</div><div class="value gold mono" id="likVal">9.766e-4</div></div>
+            <div class="readout"><div class="label">Log-likelihood</div><div class="value mono" id="logLikVal">-6.931</div></div>
+          </div>
+          <div class="meter-wrap">
+            <div class="meter-label"><span>Weaker evidence</span><span>Stronger evidence</span></div>
+            <div class="meter-track"><div class="meter-fill" id="mleMeterFill" style="width: 96.1435%;"></div><div class="meter-badge" id="mleMeterBadge" style="left: 96.1435%;">0.50</div></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btnRevealMLE">Reveal the best p (the MLE)</button>
+            <button class="btn ghost" id="btnResetMLE">Reset</button>
+          </div>
+        </div>
+        <div>
+          <canvas id="chartLogLik" height="345" width="569" style="height: 230px;"></canvas>
+          <div class="glossary" style="margin-top:14px;">
+            <b>What just happened:</b> for every guess of p, we multiplied together the chance of each observed outcome (p for a sale, 1−p for no sale). That product is the <b>likelihood</b>. Because multiplying ten small numbers gives a tiny number, we usually work with its <b>log</b> instead — the ranking of "better vs worse" p stays identical, the arithmetic just gets friendlier.
+          </div>
+          <div class="callout">
+            <b>Business reading:</b> the p that makes the observed 10 pitches most believable is simply the actual success rate you saw. MLE just formalises "believe the data" — and this exact machinery is what will soon estimate regression coefficients instead of a single p.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 3: ODDS & LOGIT ================= -->
+    <section class="chapter" id="s3">
+      <div class="chapter-head">
+        <div class="chapter-eyebrow">Step 03</div>
+        <h2>From probability, to odds, to log-odds</h2>
+        <p>Probability is capped between 0 and 1, which is exactly why a straight line can't model it directly. But if we re-express probability as <b>odds</b>, and then take the <b>log of the odds</b>, we get a number that can freely run from −∞ to +∞ — perfectly suited to a straight line. This log-odds is called the <b>logit</b>, and it is what logistic regression actually fits a straight line to, behind the scenes.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="control">
+            <label class="field-label">Probability of passing, p <span class="val" id="oddsPVal">0.50</span></label>
+            <input type="range" id="oddsSlider" min="1" max="99" value="50" step="1">
+          </div>
+          <div class="readout-row">
+            <div class="readout"><div class="label">Odds = p / (1−p)</div><div class="value teal mono" id="oddsVal">1.00 : 1</div></div>
+            <div class="readout"><div class="label">Logit = ln(odds)</div><div class="value gold mono" id="logitVal">0.000</div></div>
+          </div>
+          <canvas id="chartNumberLine" height="210" style="margin-top: 16px; height: 140px;" width="690"></canvas>
+          <div class="note">The top scale is probability (boxed 0→1). The bottom scale is the logit (unbounded). Drag the slider and watch the marker travel freely on the logit line, even as it's squeezed on the probability line.</div>
+        </div>
+        <div>
+          <div class="glossary"><b>Odds</b>, familiar from betting: "3 to 1 odds" means 3 successes for every 1 failure, i.e. p = 0.75. Odds = p ÷ (1−p).</div>
+          <div class="glossary"><b>Logit</b> = ln(odds). At p = 0.5, odds = 1, logit = 0 — the natural "50–50" midpoint. As p → 1, logit → +∞. As p → 0, logit → −∞.</div>
+          <div class="callout"><b>The one-line bridge:</b> logistic regression assumes <span class="mono">logit(p) = β₀ + β₁x</span> — an ordinary straight line, just measured on the logit scale instead of the probability scale. Converting that line back to a probability is exactly what Step 04 visualises.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 4: SIGMOID SIMULATOR ================= -->
+    <section class="chapter" id="s4">
+      <div class="chapter-head">
+        <div class="chapter-eyebrow">Step 04</div>
+        <h2>The S-curve simulator</h2>
+        <p>Un-doing the logit gives the famous <b>sigmoid function</b>: <span class="mono">p(x) = 1 / (1 + e<sup>−(β₀+β₁x)</sup>)</span>. It looks intimidating written out, but it does one simple job: it takes any straight line and folds it into an S-shape that can never leave the 0–1 corridor. Drag the two sliders below and watch exactly what each coefficient controls.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <canvas id="chartSigmoid" height="450" width="690" style="height: 300px;"></canvas>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--gold)"></span>Probability curve p(x)</span>
+            <span><span class="swatch" style="background:var(--paper-dim)"></span>Decision boundary (p = 0.5)</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="control">
+            <label class="field-label">β₀ — intercept (shifts the curve left/right) <span class="val" id="b0SigVal">-4.0</span></label>
+            <input type="range" id="b0Sig" min="-100" max="20" value="-40" step="1">
+          </div>
+          <div class="control">
+            <label class="field-label">β₁ — slope (steepness &amp; direction) <span class="val" id="b1SigVal">1.20</span></label>
+            <input type="range" id="b1Sig" min="-300" max="300" value="120" step="5">
+          </div>
+          <div class="readout-row">
+            <div class="readout"><div class="label">50% boundary at x =</div><div class="value gold mono" id="boundaryVal">3.33</div></div>
+            <div class="readout"><div class="label">Reads as</div><div class="value mono" id="boundaryReading" style="font-size:14px;">inside the plotted range</div></div>
+          </div>
+          <div class="note" style="margin-top:14px;">Try: push β₁ toward 0 — the curve flattens into a nearly flat line (x barely matters). Flip its sign — the relationship reverses (more x = <i>less</i> likely).</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 5: FULL SIMULATOR ================= -->
+    <section class="chapter" id="s5">
+      <div class="chapter-head">
+        <div class="chapter-eyebrow">Step 05 — the full picture</div>
+        <h2>Fit your own logistic regression by hand — then let MLE do it</h2>
+        <p>Below are 20 real students: hours studied (x-axis) and whether each passed the exam (y = 1) or failed (y = 0). Drag β₀ and β₁ to bend the S-curve through the data. For every student, the coloured tick shows how probable <i>their actual outcome</i> was under your current curve — that's their individual contribution to the likelihood. The <b>Evidence Meter</b> totals all 20 contributions into one log-likelihood score. Your job, exactly like MLE's job, is to make that score as large (least negative) as possible.</p>
+      </div>
+      <div class="card">
+        <canvas id="chartFull" height="540" width="1295" style="height: 360px;"></canvas>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--teal)"></span>Passed (y=1)</span>
+          <span><span class="swatch" style="background:var(--rust)"></span>Failed (y=0)</span>
+          <span><span class="swatch" style="background:var(--gold)"></span>Fitted curve p(x)</span>
+        </div>
+
+        <div class="grid-2" style="margin-top:22px;">
+          <div>
+            <div class="control">
+              <label class="field-label">β₀ — intercept <span class="val" id="b0FullVal">-4.00</span></label>
+              <input type="range" id="b0Full" min="-1000" max="200" value="-100" step="5">
+            </div>
+            <div class="control">
+              <label class="field-label">β₁ — slope on hours studied <span class="val" id="b1FullVal">1.20</span></label>
+              <input type="range" id="b1Full" min="-100" max="400" value="120" step="2">
+            </div>
+            <div class="btn-row">
+              <button class="btn" id="btnAutoFit">Auto-fit with MLE (watch it converge)</button>
+              <button class="btn ghost" id="btnResetFull">Reset sliders</button>
+            </div>
+            <div class="note" id="fitStatus" style="margin-top:10px;">Iteration 0 — dragging the sliders manually right now.</div>
+          </div>
+          <div>
+            <div class="readout-row">
+              <div class="readout"><div class="label">Log-likelihood (total)</div><div class="value gold mono" id="logLikFullVal">-8.941</div></div>
+              <div class="readout"><div class="label">Best found so far</div><div class="value mono" id="logLikBestVal">-8.030 (MLE optimum)</div></div>
+            </div>
+            <div class="meter-wrap">
+              <div class="meter-label"><span>Poor fit</span><span>Best possible fit</span></div>
+              <div class="meter-track"><div class="meter-fill" id="fullMeterFill" style="width: 86.669%;"></div><div class="meter-badge" id="fullMeterBadge" style="font-size: 9px; left: 86.669%;">now</div><div class="meter-marker" id="fullMeterBest" style="display:none;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout" id="oddsInterp"><b>Business reading:</b> at β₁ = 1.200, each additional hour studied multiplies the odds of passing by e^β₁ ≈ <b>3.32×</b>. The true MLE optimum for this class is β₁ ≈ 1.50 (odds ×4.50), β₀ ≈ -4.08.</div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 6: SUMMARY ================= -->
+    <section class="chapter" id="s6">
+      <div class="chapter-head">
+        <div class="chapter-eyebrow">Step 06</div>
+        <h2>Carrying this into a business decision</h2>
+        <p>Swap "hours studied" for "marketing spend," "pass/fail" for "buy/don't buy," and "student" for "customer" or "loan applicant" — the machinery is identical. Here is the whole module compressed into three ideas.</p>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="k">01 — Why not a straight line</div>
+          <p>Yes/No outcomes need predictions trapped between 0 and 1. A straight line can't promise that; an S-curve can.</p>
+        </div>
+        <div class="summary-card">
+          <div class="k">02 — What MLE actually does</div>
+          <p>It searches across possible coefficients and keeps the ones that make the data you actually observed the most believable — measured by log-likelihood.</p>
+        </div>
+        <div class="summary-card">
+          <div class="k">03 — Reading the output</div>
+          <p>β₁ &gt; 0 means the factor raises the odds of "Yes"; β₁ &lt; 0 lowers it. e<sup>β₁</sup> tells you the odds-multiplier per unit increase — the number you'd actually quote in a business review.</p>
+        </div>
+      </div>
+      <div class="glossary" style="margin-top:26px;">
+        <b>One-paragraph recap:</b> Logistic regression models the log-odds of an outcome as a straight line in your predictors, then converts that line into a bounded probability with the sigmoid function. Since there's no simple formula to "solve" for the best-fitting line the way ordinary regression has, we instead search for it — trying coefficient after coefficient and keeping the ones under which the observed Yes/No data was most likely to occur. That search process is Maximum Likelihood Estimation.
+      </div>
+    </section>
+
+    <footer>
+      Machine Learning for Data-Driven Decision Making · Interactive module · Dataset in Step 05 is the classic "hours studied vs. exam outcome" teaching example.
+    </footer>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   SHARED HELPERS
+   ============================================================ */
+function sigmoid(z){ return 1/(1+Math.exp(-z)); }
+function fmt(n, d){ if(!isFinite(n)) return '—'; return n.toFixed(d===undefined?2:d); }
+
+function prepCanvas(canvas){
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = rect.width || canvas.parentElement.clientWidth;
+  const cssH = canvas.height ? parseInt(canvas.getAttribute('height')) : (rect.height||260);
+  canvas.width = Math.max(1, Math.round(cssW*dpr));
+  canvas.height = Math.max(1, Math.round(cssH*dpr));
+  canvas.style.height = cssH+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, w: cssW, h: cssH};
+}
+
+const COL = {
+  ink: '#F3ECDA', inkDim:'#9FB0AA', inkFaint:'#6C7C77',
+  gold:'#D8A93B', teal:'#4FA396', rust:'#C15B4A', line:'#33463F', paperDim:'#DDD3B8'
+};
+
+// generic axis/frame drawer. returns X(x),Y(y) mapping functions
+function makeFrame(ctx,w,h, pad, xMin,xMax,yMin,yMax){
+  const left=pad.l, right=w-pad.r, top=pad.t, bottom=h-pad.b;
+  const X = x => left + (x-xMin)/(xMax-xMin)*(right-left);
+  const Y = y => bottom - (y-yMin)/(yMax-yMin)*(bottom-top);
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = COL.line;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(left,top); ctx.lineTo(left,bottom); ctx.lineTo(right,bottom);
+  ctx.stroke();
+  return {X,Y,left,right,top,bottom};
+}
+
+function drawTicksX(ctx, frame, ticks, fmtFn){
+  ctx.fillStyle = COL.inkFaint;
+  ctx.font = '11px IBM Plex Mono, monospace';
+  ctx.textAlign='center';
+  ticks.forEach(t=>{
+    const x = frame.X(t);
+    ctx.beginPath();
+    ctx.moveTo(x, frame.bottom); ctx.lineTo(x, frame.bottom+4);
+    ctx.strokeStyle = COL.line; ctx.stroke();
+    ctx.fillText(fmtFn?fmtFn(t):t, x, frame.bottom+16);
+  });
+}
+function drawTicksY(ctx, frame, ticks, fmtFn){
+  ctx.fillStyle = COL.inkFaint;
+  ctx.font = '11px IBM Plex Mono, monospace';
+  ctx.textAlign='right';
+  ticks.forEach(t=>{
+    const y = frame.Y(t);
+    ctx.beginPath();
+    ctx.moveTo(frame.left-4, y); ctx.lineTo(frame.left, y);
+    ctx.strokeStyle = COL.line; ctx.stroke();
+    ctx.fillText(fmtFn?fmtFn(t):t, frame.left-8, y+3);
+  });
+}
+
+function updateMeter(fillEl, badgeEl, value, min, max){
+  let frac = (value-min)/(max-min);
+  frac = Math.max(0, Math.min(1, frac));
+  fillEl.style.width = (frac*100)+'%';
+  badgeEl.style.left = (frac*100)+'%';
+}
+
+/* ============================================================
+   STEP 1 — THE PROBLEM (OLS on 0/1 data)
+   ============================================================ */
+(function(){
+  const canvas = document.getElementById('chartProblem');
+  const xs = [1,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11];
+  const ys = [0,0,0,0,0,1,0,0,1,0,1,0,1,1,0,1,1,1,1,1];
+  // simple OLS line
+  const n = xs.length;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  for(let i=0;i<n;i++){ num += (xs[i]-mx)*(ys[i]-my); den += (xs[i]-mx)**2; }
+  const slope = num/den, intercept = my - slope*mx;
+  let showBreak = false;
+
+  function draw(){
+    const {ctx,w,h} = prepCanvas(canvas);
+    const pad = {l:44,r:16,t:16,b:34};
+    const frame = makeFrame(ctx,w,h,pad, 0,12, -0.5,1.5);
+    drawTicksX(ctx,frame,[0,2,4,6,8,10,12]);
+    drawTicksY(ctx,frame,[-0.5,0,0.5,1,1.5],v=>fmt(v,1));
+
+    // OLS line across full range
+    ctx.strokeStyle = COL.paperDim;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(let x=0;x<=12;x+=0.2){
+      const y = intercept + slope*x;
+      const px = frame.X(x), py = frame.Y(Math.max(-0.5,Math.min(1.5,y)));
+      if(x===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    if(showBreak){
+      // shade out-of-range zones
+      ctx.fillStyle = 'rgba(193,91,74,0.12)';
+      ctx.fillRect(frame.left, frame.top, frame.right-frame.left, frame.Y(1)-frame.top);
+      ctx.fillRect(frame.left, frame.Y(0), frame.right-frame.left, frame.bottom-frame.Y(0));
+      ctx.fillStyle = COL.rust;
+      ctx.font = '12px Inter, sans-serif';
+      ctx.textAlign='left';
+      ctx.fillText('predicted probability > 100% here', frame.left+8, frame.top+16);
+      ctx.fillText('predicted probability < 0% here', frame.left+8, frame.bottom-8);
+    }
+
+    // 0/1 reference lines
+    ctx.strokeStyle = 'rgba(159,176,170,0.25)';
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(frame.left,frame.Y(0)); ctx.lineTo(frame.right,frame.Y(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(frame.left,frame.Y(1)); ctx.lineTo(frame.right,frame.Y(1)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // points
+    xs.forEach((x,i)=>{
+      ctx.fillStyle = ys[i]===1 ? COL.teal : COL.rust;
+      ctx.beginPath();
+      ctx.arc(frame.X(x), frame.Y(ys[i]), 5, 0, Math.PI*2);
+      ctx.fill();
+    });
+  }
+  draw();
+  window.addEventListener('resize', draw);
+  document.getElementById('btnProblemToggle').addEventListener('click', function(){
+    showBreak = !showBreak;
+    this.textContent = showBreak ? 'Hide the break' : 'Show where the line breaks';
+    draw();
+  });
+})();
+
+/* ============================================================
+   STEP 2 — MLE INTUITION (coin/pitch toss)
+   ============================================================ */
+(function(){
+  const outcomes = [1,1,0,1,1,1,0,1,0,1]; // 7 sales out of 10
+  const n = outcomes.length;
+  const kSuccess = outcomes.reduce((a,b)=>a+b,0);
+
+  const pitchRow = document.getElementById('pitchRow');
+  outcomes.forEach((o)=>{
+    const span = document.createElement('span');
+    span.className = 'pill ' + (o===1?'pass':'fail');
+    span.textContent = o===1 ? 'SALE' : 'no sale';
+    pitchRow.appendChild(span);
+  });
+
+  const pSlider = document.getElementById('pSlider');
+  const pVal = document.getElementById('pVal');
+  const likVal = document.getElementById('likVal');
+  const logLikVal = document.getElementById('logLikVal');
+  const meterFill = document.getElementById('mleMeterFill');
+  const meterBadge = document.getElementById('mleMeterBadge');
+  const canvas = document.getElementById('chartLogLik');
+
+  // precompute curve
+  const curve = [];
+  for(let p=0.02;p<=0.98;p+=0.01){
+    let ll=0;
+    outcomes.forEach(o=> ll += o===1? Math.log(p) : Math.log(1-p));
+    curve.push({p, ll});
+  }
+  const minLL = Math.min(...curve.map(c=>c.ll));
+  const maxLL = Math.max(...curve.map(c=>c.ll));
+  const bestP = kSuccess/n;
+
+  let revealed = false;
+
+  function drawCurve(currentP){
+    const {ctx,w,h} = prepCanvas(canvas);
+    const pad = {l:50,r:16,t:16,b:30};
+    const frame = makeFrame(ctx,w,h,pad, 0,1, minLL*1.05, maxLL+0.5);
+    drawTicksX(ctx,frame,[0,0.2,0.4,0.6,0.8,1],v=>fmt(v,1));
+    drawTicksY(ctx,frame,[minLL, (minLL+maxLL)/2, maxLL], v=>fmt(v,1));
+
+    ctx.strokeStyle = COL.gold;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    curve.forEach((c,i)=>{
+      const x=frame.X(c.p), y=frame.Y(c.ll);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    // current marker
+    let ll_cur = 0;
+    outcomes.forEach(o=> ll_cur += o===1? Math.log(currentP): Math.log(1-currentP));
+    ctx.fillStyle = COL.paperDim;
+    ctx.beginPath();
+    ctx.arc(frame.X(currentP), frame.Y(ll_cur), 5, 0, Math.PI*2);
+    ctx.fill();
+
+    if(revealed){
+      ctx.fillStyle = COL.teal;
+      ctx.beginPath();
+      ctx.arc(frame.X(bestP), frame.Y(maxLL), 6, 0, Math.PI*2);
+      ctx.fill();
+      ctx.font='12px IBM Plex Mono, monospace';
+      ctx.textAlign='center';
+      ctx.fillText('peak at p='+fmt(bestP,2), frame.X(bestP), frame.Y(maxLL)-12);
+    }
+  }
+
+  function update(){
+    const p = parseInt(pSlider.value)/100;
+    pVal.textContent = fmt(p,2);
+    let lik = 1;
+    outcomes.forEach(o=> lik *= o===1? p : (1-p));
+    let ll = 0;
+    outcomes.forEach(o=> ll += o===1? Math.log(p) : Math.log(1-p));
+    likVal.textContent = lik.toExponential(3);
+    logLikVal.textContent = fmt(ll,3);
+    updateMeter(meterFill, meterBadge, ll, minLL, maxLL);
+    meterBadge.textContent = fmt(p,2);
+    drawCurve(p);
+  }
+
+  pSlider.addEventListener('input', update);
+  window.addEventListener('resize', ()=>update());
+  document.getElementById('btnRevealMLE').addEventListener('click', function(){
+    revealed = true;
+    pSlider.value = Math.round(bestP*100);
+    update();
+  });
+  document.getElementById('btnResetMLE').addEventListener('click', function(){
+    revealed = false;
+    pSlider.value = 50;
+    update();
+  });
+  update();
+})();
+
+/* ============================================================
+   STEP 3 — ODDS & LOGIT
+   ============================================================ */
+(function(){
+  const slider = document.getElementById('oddsSlider');
+  const pValEl = document.getElementById('oddsPVal');
+  const oddsValEl = document.getElementById('oddsVal');
+  const logitValEl = document.getElementById('logitVal');
+  const canvas = document.getElementById('chartNumberLine');
+
+  function draw(p, logit){
+    const {ctx,w,h} = prepCanvas(canvas);
+    ctx.clearRect(0,0,w,h);
+    const padL=40, padR=40;
+    const topY = h*0.32, botY = h*0.72;
+
+    // probability line (0 to 1)
+    ctx.strokeStyle = COL.line; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(padL,topY); ctx.lineTo(w-padR,topY); ctx.stroke();
+    ctx.fillStyle = COL.inkFaint; ctx.font='11px IBM Plex Mono, monospace'; ctx.textAlign='center';
+    [0,0.25,0.5,0.75,1].forEach(v=>{
+      const x = padL + v*(w-padL-padR);
+      ctx.beginPath(); ctx.moveTo(x,topY-4); ctx.lineTo(x,topY+4); ctx.strokeStyle=COL.line; ctx.stroke();
+      ctx.fillText(v.toString(), x, topY-10);
+    });
+    const pxP = padL + p*(w-padL-padR);
+    ctx.fillStyle = COL.teal;
+    ctx.beginPath(); ctx.arc(pxP, topY, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = COL.ink; ctx.font='12px Inter, sans-serif'; ctx.textAlign='left';
+    ctx.fillText('probability (bounded 0–1)', padL, topY+22);
+
+    // logit line (-6 to 6, clamp display)
+    const logitMin=-6, logitMax=6;
+    ctx.strokeStyle = COL.line; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(padL,botY); ctx.lineTo(w-padR,botY); ctx.stroke();
+    ctx.fillStyle = COL.inkFaint; ctx.textAlign='center'; ctx.font='11px IBM Plex Mono, monospace';
+    [-6,-3,0,3,6].forEach(v=>{
+      const x = padL + (v-logitMin)/(logitMax-logitMin)*(w-padL-padR);
+      ctx.beginPath(); ctx.moveTo(x,botY-4); ctx.lineTo(x,botY+4); ctx.strokeStyle=COL.line; ctx.stroke();
+      ctx.fillText(v.toString(), x, botY+18);
+    });
+    const clampedLogit = Math.max(logitMin, Math.min(logitMax, logit));
+    const pxL = padL + (clampedLogit-logitMin)/(logitMax-logitMin)*(w-padL-padR);
+    ctx.fillStyle = COL.gold;
+    ctx.beginPath(); ctx.arc(pxL, botY, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = COL.ink; ctx.font='12px Inter, sans-serif'; ctx.textAlign='left';
+    ctx.fillText('logit = ln(odds)  (unbounded)', padL, botY+34);
+
+    // connecting guide line
+    ctx.strokeStyle='rgba(216,169,59,0.35)'; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(pxP,topY+8); ctx.lineTo(pxL,botY-8); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function update(){
+    const p = parseInt(slider.value)/100;
+    const odds = p/(1-p);
+    const logit = Math.log(odds);
+    pValEl.textContent = fmt(p,2);
+    oddsValEl.textContent = fmt(odds,2) + ' : 1';
+    logitValEl.textContent = fmt(logit,3);
+    draw(p, logit);
+  }
+  slider.addEventListener('input', update);
+  window.addEventListener('resize', update);
+  update();
+})();
+
+/* ============================================================
+   STEP 4 — SIGMOID SIMULATOR
+   ============================================================ */
+(function(){
+  const b0Slider = document.getElementById('b0Sig');
+  const b1Slider = document.getElementById('b1Sig');
+  const b0ValEl = document.getElementById('b0SigVal');
+  const b1ValEl = document.getElementById('b1SigVal');
+  const boundaryValEl = document.getElementById('boundaryVal');
+  const boundaryReadingEl = document.getElementById('boundaryReading');
+  const canvas = document.getElementById('chartSigmoid');
+
+  function draw(b0,b1){
+    const {ctx,w,h} = prepCanvas(canvas);
+    const pad = {l:46,r:16,t:16,b:32};
+    const frame = makeFrame(ctx,w,h,pad, 0,10, 0,1);
+    drawTicksX(ctx,frame,[0,2,4,6,8,10]);
+    drawTicksY(ctx,frame,[0,0.25,0.5,0.75,1]);
+
+    // p=0.5 line
+    ctx.strokeStyle='rgba(221,211,184,0.4)'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(frame.left, frame.Y(0.5)); ctx.lineTo(frame.right, frame.Y(0.5)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.strokeStyle = COL.gold; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    for(let x=0;x<=10;x+=0.05){
+      const p = sigmoid(b0+b1*x);
+      const px=frame.X(x), py=frame.Y(p);
+      if(x===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    if(Math.abs(b1) > 1e-6){
+      const xb = -b0/b1;
+      if(xb>=0 && xb<=10){
+        ctx.strokeStyle = COL.paperDim; ctx.setLineDash([2,4]);
+        ctx.beginPath(); ctx.moveTo(frame.X(xb), frame.top); ctx.lineTo(frame.X(xb), frame.bottom); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  function update(){
+    const b0 = parseInt(b0Slider.value)/10;
+    const b1 = parseInt(b1Slider.value)/100;
+    b0ValEl.textContent = fmt(b0,1);
+    b1ValEl.textContent = fmt(b1,2);
+    draw(b0,b1);
+    if(Math.abs(b1) > 1e-6){
+      const xb = -b0/b1;
+      boundaryValEl.textContent = fmt(xb,2);
+      boundaryReadingEl.textContent = (xb>=0 && xb<=10) ? 'inside the plotted range' : 'outside the plotted range';
+    } else {
+      boundaryValEl.textContent = '—';
+      boundaryReadingEl.textContent = 'flat curve — x has no effect';
+    }
+  }
+  b0Slider.addEventListener('input', update);
+  b1Slider.addEventListener('input', update);
+  window.addEventListener('resize', update);
+  update();
+})();
+
+/* ============================================================
+   STEP 5 — FULL MLE LOGISTIC REGRESSION SIMULATOR
+   ============================================================ */
+(function(){
+  // classic "hours studied vs passed exam" teaching dataset
+  const xs = [0.50,0.75,1.00,1.25,1.50,1.75,1.75,2.00,2.25,2.50,2.75,3.00,3.25,3.50,4.00,4.25,4.50,4.75,5.00,5.50];
+  const ys = [0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1];
+  const n = xs.length;
+
+  const b0Slider = document.getElementById('b0Full');
+  const b1Slider = document.getElementById('b1Full');
+  const b0ValEl = document.getElementById('b0FullVal');
+  const b1ValEl = document.getElementById('b1FullVal');
+  const logLikFullVal = document.getElementById('logLikFullVal');
+  const logLikBestVal = document.getElementById('logLikBestVal');
+  const meterFill = document.getElementById('fullMeterFill');
+  const meterBadge = document.getElementById('fullMeterBadge');
+  const fitStatus = document.getElementById('fitStatus');
+  const oddsInterp = document.getElementById('oddsInterp');
+  const canvas = document.getElementById('chartFull');
+
+  const baseRate = ys.reduce((a,b)=>a+b,0)/n;
+  function logLik(b0,b1){
+    let ll=0;
+    for(let i=0;i<n;i++){
+      const p = sigmoid(b0+b1*xs[i]);
+      const pc = Math.min(Math.max(p,1e-9),1-1e-9);
+      ll += ys[i]*Math.log(pc) + (1-ys[i])*Math.log(1-pc);
+    }
+    return ll;
+  }
+  const nullLL = logLik(Math.log(baseRate/(1-baseRate)), 0);
+
+  function newtonRun(maxIter){
+    let b0=0,b1=0;
+    for(let it=0; it<maxIter; it++){
+      let g0=0,g1=0,h00=0,h01=0,h11=0;
+      for(let i=0;i<n;i++){
+        const p = sigmoid(b0+b1*xs[i]);
+        const w = p*(1-p);
+        g0 += (ys[i]-p);
+        g1 += (ys[i]-p)*xs[i];
+        h00 += w; h01 += w*xs[i]; h11 += w*xs[i]*xs[i];
+      }
+      const det = h00*h11 - h01*h01;
+      if(Math.abs(det) < 1e-12) break;
+      const db0 = ( h11*g0 - h01*g1)/det;
+      const db1 = (-h01*g0 + h00*g1)/det;
+      b0 += db0; b1 += db1;
+      if(Math.abs(db0)<1e-8 && Math.abs(db1)<1e-8) break;
+    }
+    return {b0,b1};
+  }
+  const trueOpt = newtonRun(50);
+  const bestLL = logLik(trueOpt.b0, trueOpt.b1);
+  const oddsRatioTrue = Math.exp(trueOpt.b1);
+
+  let autoFitting = false;
+  let animState = null;
+
+  function draw(b0,b1){
+    const {ctx,w,h} = prepCanvas(canvas);
+    const pad = {l:46,r:16,t:16,b:34};
+    const frame = makeFrame(ctx,w,h,pad, 0,6, -0.15,1.15);
+    drawTicksX(ctx,frame,[0,1,2,3,4,5,6]);
+    drawTicksY(ctx,frame,[0,0.25,0.5,0.75,1]);
+
+    ctx.fillStyle = COL.inkFaint; ctx.font='11px Inter, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Hours studied', (frame.left+frame.right)/2, frame.bottom+30);
+
+    ctx.strokeStyle = COL.gold; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    for(let x=0;x<=6;x+=0.03){
+      const p = sigmoid(b0+b1*x);
+      const px=frame.X(x), py=frame.Y(p);
+      if(x===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    for(let i=0;i<n;i++){
+      const p = sigmoid(b0+b1*xs[i]);
+      const contrib = ys[i]===1 ? p : (1-p);
+      const px = frame.X(xs[i]);
+      const py = frame.Y(ys[i]);
+      const pyCurve = frame.Y(p);
+
+      ctx.strokeStyle = ys[i]===1 ? `rgba(79,163,150,${0.25+0.55*contrib})` : `rgba(193,91,74,${0.25+0.55*contrib})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,pyCurve); ctx.stroke();
+
+      ctx.fillStyle = ys[i]===1 ? COL.teal : COL.rust;
+      ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  function updateReadouts(b0,b1){
+    const ll = logLik(b0,b1);
+    logLikFullVal.textContent = fmt(ll,3);
+    logLikBestVal.textContent = fmt(bestLL,3) + ' (MLE optimum)';
+    updateMeter(meterFill, meterBadge, ll, Math.min(nullLL, ll)-1, bestLL);
+    if(Math.abs(b1) > 1e-6){
+      const or = Math.exp(b1);
+      oddsInterp.innerHTML = '<b>Business reading:</b> at \u03b2\u2081 = '+fmt(b1,3)+', each additional hour studied multiplies the odds of passing by e^\u03b2\u2081 \u2248 <b>'+fmt(or,2)+'\u00d7</b>. The true MLE optimum for this class is \u03b2\u2081 \u2248 '+fmt(trueOpt.b1,2)+' (odds \u00d7'+fmt(oddsRatioTrue,2)+'), \u03b2\u2080 \u2248 '+fmt(trueOpt.b0,2)+'.';
+    }
+  }
+
+  function readSliders(){
+    const b0 = parseInt(b0Slider.value)/25;
+    const b1 = parseInt(b1Slider.value)/100;
+    return {b0,b1};
+  }
+
+  function renderFromSliders(){
+    const {b0,b1} = readSliders();
+    b0ValEl.textContent = fmt(b0,2);
+    b1ValEl.textContent = fmt(b1,2);
+    draw(b0,b1);
+    updateReadouts(b0,b1);
+  }
+
+  b0Slider.addEventListener('input', ()=>{ if(!autoFitting){ fitStatus.textContent='Manual drag — adjusting \u03b20.'; renderFromSliders(); }});
+  b1Slider.addEventListener('input', ()=>{ if(!autoFitting){ fitStatus.textContent='Manual drag — adjusting \u03b21.'; renderFromSliders(); }});
+  window.addEventListener('resize', renderFromSliders);
+
+  document.getElementById('btnResetFull').addEventListener('click', function(){
+    autoFitting=false;
+    if(animState) clearInterval(animState);
+    b0Slider.value=-100; b1Slider.value=120;
+    fitStatus.textContent = 'Iteration 0 — dragging the sliders manually right now.';
+    renderFromSliders();
+  });
+
+  document.getElementById('btnAutoFit').addEventListener('click', function(){
+    if(animState) clearInterval(animState);
+    autoFitting = true;
+    let b0 = parseInt(b0Slider.value)/25;
+    let b1 = parseInt(b1Slider.value)/100;
+    let iter = 0;
+    const maxIter = 12;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function step(){
+      let g0=0,g1=0,h00=0,h01=0,h11=0;
+      for(let i=0;i<n;i++){
+        const p = sigmoid(b0+b1*xs[i]);
+        const w = p*(1-p);
+        g0 += (ys[i]-p);
+        g1 += (ys[i]-p)*xs[i];
+        h00 += w; h01 += w*xs[i]; h11 += w*xs[i]*xs[i];
+      }
+      const det = h00*h11 - h01*h01;
+      let db0=0, db1=0;
+      if(Math.abs(det) > 1e-12){
+        db0 = ( h11*g0 - h01*g1)/det;
+        db1 = (-h01*g0 + h00*g1)/det;
+      }
+      b0 += db0; b1 += db1;
+      iter++;
+
+      b0Slider.value = Math.round(b0*25);
+      b1Slider.value = Math.round(b1*100);
+      b0ValEl.textContent = fmt(b0,2);
+      b1ValEl.textContent = fmt(b1,2);
+      draw(b0,b1);
+      updateReadouts(b0,b1);
+      fitStatus.textContent = 'Auto-fit — Newton step '+iter+' of up to '+maxIter+'. \u0394\u03b2\u2080='+fmt(db0,4)+', \u0394\u03b2\u2081='+fmt(db1,4);
+
+      const converged = Math.abs(db0)<1e-6 && Math.abs(db1)<1e-6;
+      if(iter>=maxIter || converged){
+        if(animState) clearInterval(animState);
+        autoFitting = false;
+        fitStatus.textContent = 'Converged after '+iter+' Newton steps — this is the Maximum Likelihood Estimate.';
+      }
+    }
+
+    if(reduceMotion){
+      while(iter<maxIter && autoFitting !== false){ step(); if(!autoFitting) break; }
+    } else {
+      animState = setInterval(()=>{
+        step();
+        if(!autoFitting) clearInterval(animState);
+      }, 550);
+    }
+  });
+
+  renderFromSliders();
+})();
+
+/* ============================================================
+   STEP NAV — active state + scroll
+   ============================================================ */
+(function(){
+  const steps = Array.from(document.querySelectorAll('.step'));
+  steps.forEach(s=>{
+    s.addEventListener('click', ()=>{
+      const target = document.getElementById(s.dataset.target);
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+  const sections = ['s0','s1','s2','s3','s4','s5','s6'].map(id=>document.getElementById(id)).filter(Boolean);
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        steps.forEach(s=> s.classList.toggle('active', s.dataset.target===e.target.id));
+      }
+    });
+  }, {rootMargin:'-40% 0px -50% 0px'});
+  sections.forEach(s=>io.observe(s));
+})();
+</script>
+
+
+</body></html>
