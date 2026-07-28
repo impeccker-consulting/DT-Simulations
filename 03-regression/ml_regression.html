@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Session 2.2 — Regression | Impeccker Consulting</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bricolage+Grotesque:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0d0d0d;--paper:#faf8f3;--cream:#f2ede3;
+  --a1:#e84c3d;--a2:#2563eb;--a3:#16a34a;
+  --gold:#d97706;--purple:#7c3aed;--teal:#0d9488;--pink:#db2777;
+  --muted:#6b6b6b;--border:#d4cfc4;
+  --mono:"Space Mono",monospace;--sans:"Bricolage Grotesque",sans-serif
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);overflow-x:hidden}
+canvas#bg{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.15}
+
+/* SCOREBOARD */
+#sb{position:fixed;top:14px;right:14px;background:var(--ink);color:#fff;border-radius:14px;padding:14px 18px;z-index:900;min-width:180px;box-shadow:4px 4px 0 var(--a1);font-family:var(--mono);font-size:.74em}
+#sb .lbl{color:#888;font-size:.68em;letter-spacing:.1em;text-transform:uppercase}
+#sb .pts{font-size:1.85em;font-weight:700;color:var(--a1);line-height:1.1}
+.brow{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.bdg{width:26px;height:26px;border-radius:50%;background:#2a2a2a;border:2px solid #444;display:flex;align-items:center;justify-content:center;font-size:.78em;filter:grayscale(1);transition:.3s}
+.bdg.lit{filter:none;border-color:var(--gold);animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
+.pbar{height:4px;background:#333;border-radius:4px;margin-top:8px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--a1),var(--gold));transition:width .5s;border-radius:4px}
+
+/* LAYOUT */
+.pw{max-width:980px;margin:0 auto;padding:18px 18px 100px;position:relative;z-index:1}
+
+/* HERO */
+.hero{text-align:center;padding:36px 16px 26px;border-bottom:2px solid var(--ink);margin-bottom:24px}
+.kicker{font-family:var(--mono);font-size:.68em;letter-spacing:.14em;color:var(--a1);text-transform:uppercase;margin-bottom:8px}
+.hero h1{font-size:clamp(1.8em,5vw,3em);font-weight:800;line-height:1.05;letter-spacing:-.02em}
+.hero h1 em{color:var(--a1);font-style:normal}
+.hero-sub{font-size:.95em;color:var(--muted);margin-top:10px;max-width:520px;margin-inline:auto;line-height:1.65}
+.pills{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.pl{font-family:var(--mono);font-size:.68em;border:1.5px solid var(--border);border-radius:100px;padding:3px 11px;color:var(--muted)}
+.pl.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* MODULE TABS */
+.mnav{display:flex;border:2px solid var(--ink);border-radius:11px;overflow:hidden;margin-bottom:26px}
+.mt{flex:1;padding:10px 4px;text-align:center;font-weight:700;font-size:.72em;cursor:pointer;border-right:2px solid var(--ink);background:#fff;transition:background .15s,color .15s;line-height:1.3;user-select:none}
+.mt:last-child{border-right:none}
+.mt:hover{background:var(--cream)}
+.mt.on{background:var(--ink);color:#fff}
+.mt .n{font-family:var(--mono);font-size:1.05em;display:block;margin-bottom:2px}
+.mod{display:none}.mod.on{display:block;animation:fi .28s ease}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* TYPOGRAPHY */
+.stitle{font-size:1.65em;font-weight:800;letter-spacing:-.02em;border-left:6px solid var(--a1);padding-left:12px;margin-bottom:5px}
+.ssub{color:var(--muted);margin-bottom:20px;font-size:.93em;line-height:1.6}
+
+/* CARDS */
+.card{background:#fff;border:2px solid var(--ink);border-radius:15px;padding:20px;margin:16px 0;box-shadow:4px 4px 0 var(--ink)}
+.dark{background:var(--ink);color:#fff;border-radius:15px;padding:20px;margin:16px 0}
+.grad-card{background:linear-gradient(135deg,#1e1b4b,#1e3a5f);color:#fff;border-radius:15px;padding:24px;margin:16px 0;border:2px solid #3730a3}
+.grad-card h3{font-size:1.15em;font-weight:800;margin-bottom:11px}
+.grad-card p{color:#c7d2fe;line-height:1.75;margin-bottom:10px;font-size:.91em}
+.grad-card p:last-child{margin-bottom:0}
+.grad-card strong{color:#fff}
+.gbullets{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.gb{background:rgba(255,255,255,.07);border-radius:9px;padding:10px 12px;border-left:3px solid #818cf8;font-size:.85em;line-height:1.6;color:#c7d2fe}
+.gb strong{color:#a5b4fc;display:block;margin-bottom:3px;font-size:.8em;text-transform:uppercase;letter-spacing:.06em}
+
+/* STRIPS */
+.info{background:#eff6ff;border-left:4px solid var(--a2);padding:10px 13px;border-radius:6px;margin:9px 0;font-size:.87em;line-height:1.7}
+.ok-strip{background:#f0fdf4;border-left:4px solid var(--a3);padding:10px 13px;border-radius:6px;margin:9px 0;font-size:.87em;line-height:1.7}
+.warn{background:#fff7ed;border-left:4px solid var(--gold);padding:10px 13px;border-radius:6px;margin:9px 0;font-size:.87em;line-height:1.7}
+.danger{background:#fef2f2;border-left:4px solid var(--a1);padding:10px 13px;border-radius:6px;margin:9px 0;font-size:.87em;line-height:1.7}
+.purple-strip{background:#f5f3ff;border-left:4px solid var(--purple);padding:10px 13px;border-radius:6px;margin:9px 0;font-size:.87em;line-height:1.7}
+
+/* FORMULA */
+.formula{background:#1a1a1a;border-radius:9px;padding:11px 15px;font-family:var(--mono);font-size:.93em;color:#7dd3fc;margin:9px 0;border-left:3px solid var(--a1);line-height:1.6}
+.fparts{display:grid;gap:7px;margin-top:9px}
+.fp{display:flex;gap:11px;background:#1a1a1a;border-radius:7px;padding:8px 11px}
+.fs{font-family:var(--mono);color:#7dd3fc;min-width:90px;font-weight:700;font-size:.83em;flex-shrink:0}
+.fd{color:#ccc;font-size:.83em;line-height:1.65}
+.fd strong{color:#fff}
+
+/* INTERACTIVE */
+.ibox{background:var(--cream);border:2px dashed var(--border);border-radius:15px;padding:20px;margin:16px 0}
+.ibox h4{font-size:.95em;font-weight:800;margin-bottom:9px}
+.itag{display:inline-block;background:var(--a1);color:#fff;font-size:.58em;padding:2px 8px;border-radius:100px;vertical-align:middle;margin-left:6px;font-family:var(--mono)}
+.slrow{margin:9px 0}
+.sllbl{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-weight:600;font-size:.82em}
+.slval{font-family:var(--mono);background:var(--ink);color:#fff;padding:2px 8px;border-radius:5px;font-size:.76em}
+input[type=range]{width:100%;-webkit-appearance:none;height:5px;background:var(--border);border-radius:5px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--ink);cursor:pointer;border:3px solid #fff;box-shadow:0 0 0 2px var(--ink)}
+.cbox{background:#fff;border:2px solid var(--border);border-radius:9px;padding:9px;margin:9px 0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* QUIZ */
+.qblock{background:#fffbeb;border:2px solid var(--gold);border-radius:15px;padding:16px;margin:16px 0}
+.qblock h4{font-weight:800;color:#92400e;margin-bottom:5px}
+.qprompt{font-size:.9em;color:var(--ink);margin:7px 0 11px;line-height:1.65}
+.qopt{background:#fff;border:2px solid var(--border);border-radius:9px;padding:10px 13px;margin:4px 0;cursor:pointer;font-size:.87em;display:flex;align-items:flex-start;gap:9px;line-height:1.5;transition:border-color .14s,background .14s}
+.qopt:hover{border-color:var(--a2);background:#eff6ff}
+.qopt.correct{background:#dcfce7!important;border-color:var(--a3)!important;pointer-events:none}
+.qopt.wrong{background:#fee2e2!important;border-color:var(--a1)!important;pointer-events:none}
+.qopt.dim{opacity:.5;pointer-events:none}
+.qm{width:21px;height:21px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.68em;flex-shrink:0;margin-top:1px}
+.qfb{margin-top:8px;padding:9px 12px;border-radius:8px;font-size:.85em;line-height:1.6;display:none}
+.qfb.ok{background:#dcfce7;color:#166534;border-left:4px solid var(--a3);display:block}
+.qfb.no{background:#fee2e2;color:#991b1b;border-left:4px solid var(--a1);display:block}
+
+/* ACCORDION */
+.acc{border:2px solid var(--ink);border-radius:12px;margin:10px 0;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+.acc-h{display:flex;justify-content:space-between;align-items:center;padding:14px 17px;cursor:pointer;background:#fff;user-select:none}
+.acc-h:hover{background:var(--cream)}
+.acc-left{display:flex;align-items:center;gap:11px}
+.acc-ico{font-size:1.65em}
+.acc-title{font-weight:800;font-size:.95em}
+.acc-sub{color:var(--muted);font-size:.77em;margin-top:2px}
+.acc-pts{font-family:var(--mono);font-size:.62em;padding:2px 9px;border-radius:100px;border:1.5px solid var(--gold);color:var(--gold)}
+.acc-arr{font-size:.9em;transition:transform .3s}
+.acc-arr.open{transform:rotate(180deg)}
+.acc-body{display:none;padding:16px;border-top:2px solid var(--border);background:var(--cream)}
+.acc-body.open{display:block}
+
+/* TABLES */
+.ctbl{width:100%;border-collapse:collapse;margin:12px 0;border-radius:10px;overflow:hidden;border:2px solid var(--ink)}
+.ctbl th{background:var(--ink);color:#fff;padding:10px 12px;text-align:left;font-family:var(--mono);font-size:.72em}
+.ctbl td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:.83em;line-height:1.5}
+.ctbl tr:last-child td{border-bottom:none}
+.ctbl tr:nth-child(even) td{background:var(--cream)}
+
+/* DIVIDER */
+.div{display:flex;align-items:center;gap:11px;margin:20px 0}
+.div::before,.div::after{content:"";flex:1;height:1px;background:var(--border)}
+.div span{font-family:var(--mono);font-size:.66em;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+
+/* BUTTONS */
+.nb{display:flex;justify-content:space-between;margin-top:34px;padding-top:16px;border-top:2px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);font-weight:700;font-size:.86em;padding:9px 18px;border:2px solid var(--ink);border-radius:9px;cursor:pointer;background:var(--ink);color:#fff;transition:transform .14s,box-shadow .14s}
+.btn:hover{transform:translateY(-2px);box-shadow:3px 3px 0 var(--a1)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--cream);box-shadow:3px 3px 0 var(--ink)}
+.btn.grn{background:var(--a3);border-color:var(--a3)}
+.btn.gld{background:var(--gold);border-color:var(--gold)}
+
+/* SUB-TABS */
+.stabs{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0 8px}
+.st{font-family:var(--mono);font-size:.69em;padding:5px 12px;border:2px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-weight:600;transition:all .14s}
+.st:hover{border-color:var(--ink)}
+.st.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sp{display:none}.sp.on{display:block;animation:fi .25s}
+
+/* FLOW */
+.flow{background:#0f172a;border-radius:12px;padding:16px;margin:13px 0;border:2px solid #1e293b;overflow-x:auto}
+.frow{display:flex;align-items:center;min-width:500px;flex-wrap:nowrap}
+.fn{background:#1e293b;border:2px solid #334155;border-radius:8px;padding:8px 10px;text-align:center;font-size:.72em;min-width:82px;flex-shrink:0}
+.fn.hl{background:#1e3a5f;border-color:var(--a2)}
+.fn.ok{background:#14532d;border-color:var(--a3)}
+.fn .fi{font-size:1.2em;margin-bottom:2px}
+.fn .fl{font-weight:700;color:#e2e8f0;font-size:.78em}
+.fn .fs2{color:#94a3b8;font-size:.68em;margin-top:2px;line-height:1.3}
+.fa{color:#475569;font-size:1.1em;padding:0 3px;flex-shrink:0}
+
+/* ALGO GRID */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px;margin:16px 0}
+.ac{border:2px solid var(--ink);border-radius:12px;padding:14px;background:#fff;box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .18s,box-shadow .18s;position:relative;border-left-width:6px}
+.ac:hover{transform:translateY(-3px);box-shadow:5px 5px 0 var(--ink)}
+.ac.sel{background:var(--ink);color:#fff}
+.ac-tag{font-family:var(--mono);font-size:.59em;letter-spacing:.09em;text-transform:uppercase;margin-bottom:5px}
+.ac-name{font-weight:800;font-size:.91em;margin-bottom:5px}
+.ac-desc{font-size:.77em;line-height:1.5;color:#555}
+.ac.sel .ac-desc{color:#aaa}
+.ac-badge{display:inline-block;font-family:var(--mono);font-size:.59em;background:var(--cream);border:1px solid var(--border);border-radius:5px;padding:2px 7px;margin-top:6px}
+.ac.sel .ac-badge{background:#1a1a1a;border-color:#444;color:#aaa}
+.adetail{background:var(--ink);color:#fff;border-radius:14px;padding:20px;margin-top:12px;display:none}
+.adetail.show{display:block;animation:fi .3s ease}
+
+/* STAT CARDS */
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:9px;margin:11px 0}
+.sc{background:#fff;border:2px solid var(--border);border-radius:9px;padding:11px;text-align:center}
+.sc .sv{font-family:var(--mono);font-size:1.3em;font-weight:700;color:var(--a2)}
+.sc .sl{font-size:.68em;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIMELINE */
+.tl{border-left:3px solid var(--a1);padding-left:17px;margin:13px 0}
+.tli{margin-bottom:13px;position:relative}
+.tli::before{content:"";position:absolute;left:-23px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--a1)}
+.tls{font-family:var(--mono);font-size:.66em;color:var(--a1);font-weight:700;letter-spacing:.08em;margin-bottom:2px}
+.tlt{font-weight:800;margin-bottom:2px;font-size:.93em}
+.tld{font-size:.82em;color:#555;line-height:1.6}
+
+/* DATA TABLE */
+.dtbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.72em}
+.dtbl th{background:#1f1f1f;color:var(--gold);padding:7px 9px;text-align:left;border-bottom:1px solid #333;white-space:nowrap}
+.dtbl td{padding:6px 9px;border-bottom:1px solid #222;color:#ddd}
+.dtbl td.hi{color:#7dd3fc;font-weight:700}
+.dtbl td.g{color:#86efac}.dtbl td.r{color:#fca5a5}.dtbl td.y{color:#fde68a}
+
+/* ANALOGY BOX */
+.ana{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:12px;overflow:hidden;margin:13px 0}
+.ana-a{background:#fef9c3;padding:15px;border-right:2px solid var(--ink)}
+.ana-b{background:#dbeafe;padding:15px}
+.ana-a h5,.ana-b h5{font-weight:800;font-size:.78em;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.ana-a p,.ana-b p{font-size:.83em;line-height:1.7;color:#333}
+
+/* BIG VISUAL BOXES */
+.viz-box{border:3px solid var(--ink);border-radius:16px;padding:22px;margin:16px 0;position:relative;overflow:hidden}
+.viz-box .vb-label{position:absolute;top:12px;right:14px;font-family:var(--mono);font-size:.6em;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* TROPHY */
+.trophy{text-align:center;padding:44px 16px}
+.trophy .ti{font-size:4em;margin-bottom:12px;animation:bou .9s infinite alternate}
+@keyframes bou{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+.trophy h2{font-size:1.9em;font-weight:800;margin-bottom:8px}
+.fscore{font-family:var(--mono);font-size:2.3em;font-weight:700;color:var(--a1);margin:14px 0;display:block}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:9px;max-width:540px;margin:14px auto}
+.tc{background:#fff;border:2px solid var(--border);border-radius:9px;padding:11px;text-align:center}
+.tc .tci{font-size:1.6em}.tc .tcl{font-size:.7em;color:var(--muted);margin-top:3px}
+
+/* CONFETTI */
+.cf{position:fixed;pointer-events:none;z-index:9999;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+/* BIG NUMBER CALLOUTS */
+.big-num{font-family:var(--mono);font-size:2.2em;font-weight:700;color:var(--a1);display:block;margin:4px 0}
+.num-lbl{font-size:.78em;color:var(--muted)}
+
+/* PROGRESS STEPPER */
+.stepper{display:flex;align-items:center;margin:14px 0;overflow-x:auto}
+.step{text-align:center;flex-shrink:0}
+.step .sc2{width:36px;height:36px;border-radius:50%;border:3px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85em;margin:0 auto 4px;transition:.3s}
+.step.done .sc2{background:var(--a3);border-color:var(--a3);color:#fff}
+.step.active .sc2{background:var(--a1);border-color:var(--a1);color:#fff;box-shadow:0 0 0 4px rgba(232,76,61,.2)}
+.step .sl2{font-size:.65em;color:var(--muted);white-space:nowrap;max-width:70px}
+.step-line{flex:1;height:3px;background:var(--border);min-width:20px;flex-shrink:0}
+.step-line.done{background:var(--a3)}
+
+/* DRAG DROP */
+.drag-pool{display:flex;flex-wrap:wrap;gap:7px;padding:12px;background:#f8f8f8;border-radius:9px;min-height:50px;margin:8px 0}
+.drag-item{background:#fff;border:2px solid var(--border);border-radius:7px;padding:6px 11px;font-size:.82em;cursor:grab;transition:all .18s;user-select:none}
+.drag-item:hover{border-color:var(--a2);background:#eff6ff;transform:translateY(-2px)}
+.drag-item:active{cursor:grabbing}
+.drag-item.placed{opacity:.4;pointer-events:none}
+.drop-zone{min-height:52px;border:2px dashed var(--border);border-radius:9px;padding:9px;margin:6px 0;background:#fafafa;transition:all .18s;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.drop-zone.over{border-color:var(--a2);background:#eff6ff}
+.drop-zone.correct{border-color:var(--a3);background:#f0fdf4}
+.drop-zone.wrong{border-color:var(--a1);background:#fef2f2}
+.dz-label{font-family:var(--mono);font-size:.68em;font-weight:700;color:var(--muted);margin-bottom:4px}
+
+/* METER */
+.meter-wrap{margin:10px 0}
+.meter-lbl{display:flex;justify-content:space-between;font-size:.8em;margin-bottom:4px;font-weight:600}
+.meter-bar{height:14px;background:#e5e7eb;border-radius:7px;overflow:hidden;border:1px solid #d1d5db}
+.meter-fill{height:100%;border-radius:7px;transition:width .6s ease}
+
+/* HIGHLIGHT BOX */
+.hbox{border-radius:12px;padding:18px;margin:13px 0;border:2px solid}
+.hbox-blue{background:#eff6ff;border-color:#bfdbfe}
+.hbox-green{background:#f0fdf4;border-color:#bbf7d0}
+.hbox-red{background:#fef2f2;border-color:#fecaca}
+.hbox-gold{background:#fffbeb;border-color:#fde68a}
+.hbox-purple{background:#f5f3ff;border-color:#ddd6fe}
+.hbox h4{font-weight:800;margin-bottom:8px;font-size:.93em}
+
+/* COMPARISON SPLIT */
+.vs{display:grid;grid-template-columns:1fr 40px 1fr;gap:0;margin:14px 0;align-items:stretch}
+.vs-a{background:#fef2f2;border:2px solid var(--a1);border-radius:12px 0 0 12px;padding:16px}
+.vs-mid{background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.1em;font-family:var(--mono)}
+.vs-b{background:#f0fdf4;border:2px solid var(--a3);border-radius:0 12px 12px 0;padding:16px}
+.vs-a h4{color:var(--a1);font-weight:800;margin-bottom:8px;font-size:.88em}
+.vs-b h4{color:var(--a3);font-weight:800;margin-bottom:8px;font-size:.88em}
+.vs-a p,.vs-b p{font-size:.83em;line-height:1.7;color:#333}
+
+/* EMOJI SCALE */
+.escale{display:flex;justify-content:space-between;align-items:flex-end;padding:12px;background:#f8f8f8;border-radius:10px;margin:10px 0;border:1px solid var(--border)}
+.escale-item{text-align:center;flex:1}
+.escale-item .ei{font-size:1.6em;display:block}
+.escale-item .el{font-size:.65em;color:var(--muted);margin-top:3px}
+
+@media(max-width:640px){
+  #sb{top:auto;bottom:10px;right:10px;min-width:130px}
+  .g2,.g3,.gbullets,.ana{grid-template-columns:1fr}
+  .ana-a{border-right:none;border-bottom:2px solid var(--ink)}
+  .agrid{grid-template-columns:1fr 1fr}
+  .mnav{flex-wrap:wrap}
+  .mt{min-width:30%;border-bottom:1px solid var(--border)}
+  .vs{grid-template-columns:1fr}
+  .vs-a{border-radius:12px 12px 0 0}
+  .vs-mid{padding:8px;border-radius:0}
+  .vs-b{border-radius:0 0 12px 12px}
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<div id="sb">
+  <div class="lbl">XP Points</div>
+  <div class="pts" id="sc-pts">0</div>
+  <div style="color:#888;font-size:.65em">/ 500 XP</div>
+  <div class="pbar"><div class="pfill" id="sc-bar" style="width:0%"></div></div>
+  <div class="brow">
+    <div class="bdg" id="b1" title="Line Master">&#128207;</div>
+    <div class="bdg" id="b2" title="L1 Warrior">&#127919;</div>
+    <div class="bdg" id="b3" title="L2 Guardian">&#128737;&#65039;</div>
+    <div class="bdg" id="b4" title="SVR Ace">&#9876;&#65039;</div>
+    <div class="bdg" id="b5" title="Forest King">&#127794;</div>
+    <div class="bdg" id="b6" title="Bias-Var Guru">&#9878;&#65039;</div>
+    <div class="bdg" id="b7" title="Champion">&#127942;</div>
+  </div>
+</div>
+<div class="pw">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 18px;border-bottom:2px solid var(--ink)">
+  <img src="data:image/png;base64,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" style="max-height:54px;width:auto" alt="Impeccker Consulting">
+  <div style="font-family:var(--mono);font-size:.68em;color:var(--muted);text-align:right"><div style="font-weight:700;color:var(--ink)">Session 2.2</div><div>ML for Data-Driven<br>Decision Making</div></div>
+</div>
+
+<div class="hero">
+  <div class="kicker">Session 2 &middot; Module 2 of 4</div>
+  <h1>The Art &amp; Science of<br><em>Regression</em></h1>
+  <div class="hero-sub">Predict ANY number &mdash; flat prices, monsoon rainfall, delivery times. Master 10+ algorithms through stories, live simulators &amp; challenges. Zero jargon &mdash; maximum insight.</div>
+  <div class="pills">
+    <div class="pl">2.1 Classification &#10003;</div>
+    <div class="pl on">2.2 Regression &larr; NOW</div>
+    <div class="pl">2.3 Clustering</div>
+    <div class="pl">2.4 Dimensionality Reduction</div>
+  </div>
+</div>
+<div class="mnav">
+  <div class="mt on"  onclick="showMod(0)"><span class="n">&#9312;</span>What is Regression?</div>
+  <div class="mt"     onclick="showMod(1)"><span class="n">&#9313;</span>Linear Regression</div>
+  <div class="mt"     onclick="showMod(2)"><span class="n">&#9314;</span>L1, L2 &amp; Elastic Net</div>
+  <div class="mt"     onclick="showMod(3)"><span class="n">&#9315;</span>Advanced Algorithms</div>
+  <div class="mt"     onclick="showMod(4)"><span class="n">&#9316;</span>Bias &amp; Variance</div>
+  <div class="mt"     onclick="showMod(5)"><span class="n">&#127942;</span>Boss Challenge</div>
+</div>
+
+<div class="mod on" id="mod0">
+<div class="stitle">What is Regression?</div>
+<div class="ssub">Before any formula &mdash; let us build the intuition. Regression = predicting a NUMBER. That is literally it.</div>
+
+<div class="card">
+  <div style="font-size:1.3em;margin-bottom:10px">&#127968; The Mumbai Flat Story</div>
+  <p style="font-size:.92em;line-height:1.8;margin-bottom:12px">Your friend wants to buy a 2BHK in Bandra. She asks: <strong>"How much should it cost?"</strong> You could guess. OR you could look at 1,000 past sales, find the pattern &mdash; <em>"every extra sq ft adds &#8377;6,800"</em> &mdash; and predict: <strong>&#8377;62 Lakhs</strong>. That is regression. Using past data to predict a number.</p>
+  <div class="g2">
+    <div class="hbox hbox-blue">
+      <h4 style="color:var(--a2)">&#128309; Classification &rarr; A CATEGORY</h4>
+      <p style="font-size:.84em;line-height:1.7">Will loan default? &rarr; YES / NO<br>Is email spam? &rarr; SPAM / HAM<br>Which product? &rarr; A / B / C<br><strong>Output: one of a fixed set of labels</strong></p>
+    </div>
+    <div class="hbox hbox-gold">
+      <h4 style="color:#92400e">&#129001; Regression &rarr; A NUMBER</h4>
+      <p style="font-size:.84em;line-height:1.7">What will flat cost? &rarr; &#8377;62L<br>How many units sell? &rarr; 4,382<br>Delivery time? &rarr; 34 minutes<br><strong>Output: any value on a number line</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="div"><span>10 regression algorithms at a glance &mdash; click any card</span></div>
+<div class="agrid" id="agrid">
+  <div class="ac" style="border-left-color:#2563eb" onclick="showAlgo('slr',this)"><div class="ac-tag" style="color:#2563eb">Foundation</div><div class="ac-name">&#128207; Simple Linear</div><div class="ac-desc">One input &rarr; straight line &rarr; one output</div><div class="ac-badge">y = mx + b</div></div>
+  <div class="ac" style="border-left-color:#2563eb" onclick="showAlgo('mlr',this)"><div class="ac-tag" style="color:#2563eb">Most Used</div><div class="ac-name">&#128202; Multiple Linear</div><div class="ac-desc">Many inputs, each weighted, summed to output</div><div class="ac-badge">y = w&#8321;x&#8321;+w&#8322;x&#8322;+b</div></div>
+  <div class="ac" style="border-left-color:#7c3aed" onclick="showAlgo('poly',this)"><div class="ac-tag" style="color:#7c3aed">For Curves</div><div class="ac-name">&#128200; Polynomial</div><div class="ac-desc">Adds x&sup2;, x&sup3; terms to fit curves &amp; U-shapes</div><div class="ac-badge">ax&sup2;+bx+c</div></div>
+  <div class="ac" style="border-left-color:#0d9488" onclick="showAlgo('ridge',this)"><div class="ac-tag" style="color:#0d9488">Regularized</div><div class="ac-name">&#128737;&#65039; Ridge (L2)</div><div class="ac-desc">Shrinks coefficients, keeps all features</div><div class="ac-badge">+&lambda;&Sigma;w&sup2;</div></div>
+  <div class="ac" style="border-left-color:#16a34a" onclick="showAlgo('lasso',this)"><div class="ac-tag" style="color:#16a34a">Feature Killer</div><div class="ac-name">&#127919; Lasso (L1)</div><div class="ac-desc">Zeros out useless features automatically</div><div class="ac-badge">+&lambda;&Sigma;|w|</div></div>
+  <div class="ac" style="border-left-color:#d97706" onclick="showAlgo('enet',this)"><div class="ac-tag" style="color:#d97706">Best of Both</div><div class="ac-name">&#9878;&#65039; Elastic Net</div><div class="ac-desc">Ridge + Lasso combined. The safe default.</div><div class="ac-badge">&alpha;L1+(1-&alpha;)L2</div></div>
+  <div class="ac" style="border-left-color:#e84c3d" onclick="showAlgo('svr',this)"><div class="ac-tag" style="color:#e84c3d">Outlier-Proof</div><div class="ac-name">&#9876;&#65039; SVR</div><div class="ac-desc">Fits a tube &mdash; ignores small errors</div><div class="ac-badge">&epsilon;-insensitive</div></div>
+  <div class="ac" style="border-left-color:#8b5cf6" onclick="showAlgo('dtr',this)"><div class="ac-tag" style="color:#8b5cf6">Interpretable</div><div class="ac-name">&#127795; Decision Tree</div><div class="ac-desc">IF-THEN rules, predicts region average</div><div class="ac-badge">Split &amp; average</div></div>
+  <div class="ac" style="border-left-color:#0891b2" onclick="showAlgo('rf',this)"><div class="ac-tag" style="color:#0891b2">Ensemble</div><div class="ac-name">&#127794; Random Forest</div><div class="ac-desc">500 trees averaged &mdash; errors cancel out</div><div class="ac-badge">Bagging</div></div>
+  <div class="ac" style="border-left-color:#dc2626" onclick="showAlgo('gbm',this)"><div class="ac-tag" style="color:#dc2626">Competition Winner</div><div class="ac-name">&#128640; XGBoost</div><div class="ac-desc">Each tree fixes the last tree&apos;s mistakes</div><div class="ac-badge">Boosting</div></div>
+</div>
+<div class="adetail" id="adetail"><div id="adetail-inner"></div></div>
+
+<div class="div"><span>regression vs classification &mdash; the cheat sheet</span></div>
+<table class="ctbl">
+  <thead><tr><th>Question</th><th>Regression (number)</th><th>Classification (label)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Output</strong></td><td>&#8377;62L, 34&deg;C, 847 hrs, 12 mins</td><td>YES/NO, Dog/Cat, A/B/C</td></tr>
+    <tr><td><strong>Typical question</strong></td><td>"How much?" "How many?" "When?"</td><td>"Which one?" "Will it?"</td></tr>
+    <tr><td><strong>Zomato</strong></td><td>Delivery time = 34 minutes</td><td>Will delivery be late? YES</td></tr>
+    <tr><td><strong>Flipkart</strong></td><td>Demand next week = 4,382 units</td><td>Will item sell out? YES</td></tr>
+    <tr><td><strong>Bank</strong></td><td>Loan amount to approve = &#8377;28L</td><td>Should we approve? YES/NO</td></tr>
+    <tr><td><strong>Error metric</strong></td><td>MAE, RMSE, R&sup2;</td><td>Accuracy, Precision, Recall, F1</td></tr>
+  </tbody>
+</table>
+
+<div class="qblock">
+  <h4>&#9889; Quick Fire Round &mdash; Classify the Problem! (+10 XP each)</h4>
+  <div class="qprompt">Indian Railways wants to predict <strong>how many minutes a train will be delayed</strong>. This is:</div>
+  <div class="qopt" onclick="cq('q0a',this,true)"><div class="qm">A</div>Regression &mdash; predicting minutes (a number: 0, 5, 43, 120...)</div>
+  <div class="qopt" onclick="cq('q0a',this,false)"><div class="qm">B</div>Classification &mdash; predicting ON-TIME or DELAYED</div>
+  <div class="qopt" onclick="cq('q0a',this,false)"><div class="qm">C</div>Both &mdash; it depends on the algorithm</div>
+  <div class="qfb" id="q0a-fb"></div>
+</div>
+
+<div class="qblock">
+  <h4>&#9889; Quick Fire Round 2</h4>
+  <div class="qprompt">SEBI wants to predict <strong>tomorrow&apos;s Sensex closing value</strong> (e.g., 73,458 points). This is:</div>
+  <div class="qopt" onclick="cq('q0b',this,true)"><div class="qm">A</div>Regression &mdash; the output is a specific number</div>
+  <div class="qopt" onclick="cq('q0b',this,false)"><div class="qm">B</div>Classification &mdash; predicting UP or DOWN</div>
+  <div class="qopt" onclick="cq('q0b',this,false)"><div class="qm">C</div>Neither &mdash; stock markets are unpredictable so no ML applies</div>
+  <div class="qfb" id="q0b-fb"></div>
+</div>
+
+<div class="nb"><div></div><button class="btn" onclick="showMod(1)">&#9313; Linear Regression &rarr;</button></div>
+</div>
+
+<div class="mod" id="mod1">
+<div class="stitle">Linear Regression</div>
+<div class="ssub">The mother of all ML. One line that explains everything. Master this and the rest is easy.</div>
+
+<div class="card">
+  <div style="font-size:1.3em;margin-bottom:10px">&#128210; The "Straight Line Through Dots" Idea</div>
+  <p style="font-size:.92em;line-height:1.8;margin-bottom:12px">Plot 500 Pune flats: X-axis = size (sq ft), Y-axis = price (&#8377;L). Dots form a diagonal band. <strong>Linear regression finds the single straight line that passes as close as possible to ALL the dots</strong>. That line is the model. Use it to predict price for any new flat.</p>
+  <div class="info">&#128161; <strong>Ordinary Least Squares (OLS):</strong> The algorithm that finds this line by minimising the sum of squared vertical distances from each dot to the line. It has an exact mathematical formula &mdash; no guessing, no iteration needed.</div>
+</div>
+
+<div class="dark">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.72em;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">FORMULA DECODED &mdash; Simple Linear Regression</div>
+  <div style="font-size:1.05em;font-weight:800;margin-bottom:14px;color:#fff">Predicted Price (&ycirc;) = m &times; Size + b</div>
+  <div class="fparts">
+    <div class="fp"><div class="fs">&ycirc; (y-hat)</div><div class="fd"><strong>Our prediction.</strong> The "hat" means estimated. For 800 sq ft: &ycirc; = &#8377;62.4L</div></div>
+    <div class="fp"><div class="fs">m (slope)</div><div class="fd"><strong>How much price changes per extra sq ft.</strong> If m = &#8377;6,800, then one extra sq ft adds &#8377;6,800. This is what the model learns from data.</div></div>
+    <div class="fp"><div class="fs">Size (x)</div><div class="fd"><strong>Your input.</strong> The flat size you know. Just one feature in Simple Linear Regression.</div></div>
+    <div class="fp"><div class="fs">b (intercept)</div><div class="fd"><strong>Starting value.</strong> Price even when size = 0. Not physically meaningful but mathematically needed. Think of it as fixed costs.</div></div>
+  </div>
+  <div style="background:#111;border-radius:8px;padding:12px 14px;margin-top:12px;border-left:3px solid var(--gold)">
+    <div style="font-family:var(--mono);color:var(--gold);font-size:.78em;font-weight:700;margin-bottom:7px">&#128290; WORKED EXAMPLE: Bandra West Flat</div>
+    <div style="color:#e2e8f0;font-size:.85em;line-height:2">
+      Model learned from 500 sales: m = &#8377;6,800/sq ft &nbsp;|&nbsp; b = &#8377;8,00,000<br>
+      Your flat: 800 sq ft in Bandra West<br>
+      &ycirc; = &#8377;6,800 &times; 800 + &#8377;8,00,000 = &#8377;54,40,000 + &#8377;8,00,000 = <strong style="color:var(--gold)">&#8377;62,40,000 (&#8377;62.4 Lakhs)</strong><br>
+      Actual sale price: &#8377;64.8L &mdash; model error = &#8377;2.4L (3.7%). Not bad for one variable!
+    </div>
+  </div>
+</div>
+
+<div class="div"><span>&#127918; live playground &mdash; find the best line yourself</span></div>
+<div class="ibox">
+  <h4>&#127918; Slope &amp; Intercept Explorer <span class="itag">LIVE</span></h4>
+  <p style="font-size:.84em;color:#555;margin-bottom:14px">Drag the sliders. The line moves in real time. Your goal: get <strong>R&sup2; above 0.90</strong>. Watch how MAE and R&sup2; respond &mdash; that&apos;s model evaluation in action!</p>
+  <div class="g2">
+    <div>
+      <div class="slrow"><div class="sllbl"><span>Slope (m) &#8377;/sq ft</span><span class="slval" id="sv-slope">6800</span></div><input type="range" min="2000" max="12000" value="6800" step="100" id="sl-slope" oninput="updateLine()"></div>
+      <div class="slrow"><div class="sllbl"><span>Intercept (b) in &#8377;L</span><span class="slval" id="sv-int">8.0L</span></div><input type="range" min="0" max="3000000" value="800000" step="50000" id="sl-int" oninput="updateLine()"></div>
+      <div style="background:#111;border-radius:9px;padding:13px;margin-top:10px">
+        <div style="color:#7dd3fc;font-family:var(--mono);font-size:.7em;margin-bottom:8px">LIVE MODEL METRICS</div>
+        <div class="g2" style="gap:8px">
+          <div style="background:#1a1a1a;border-radius:7px;padding:9px;text-align:center"><div style="font-family:var(--mono);font-size:1.2em;font-weight:700;color:var(--gold)" id="m-mae">--</div><div style="font-size:.65em;color:#888;margin-top:2px">MAE (&#8377;L)</div></div>
+          <div style="background:#1a1a1a;border-radius:7px;padding:9px;text-align:center"><div style="font-family:var(--mono);font-size:1.2em;font-weight:700;color:#86efac" id="m-r2">--</div><div style="font-size:.65em;color:#888;margin-top:2px">R&sup2; Score</div></div>
+        </div>
+        <div id="line-verdict" style="margin-top:8px;font-size:.79em;padding:7px;background:#1e293b;border-radius:6px;color:#94a3b8;line-height:1.5"></div>
+      </div>
+    </div>
+    <div class="cbox"><canvas id="cv-line" height="230"></canvas></div>
+  </div>
+</div>
+
+<div class="div"><span>multiple linear regression &mdash; the real world version</span></div>
+<div class="grad-card">
+  <div class="ts-tag" style="font-family:var(--mono);font-size:.63em;letter-spacing:.13em;color:#a5b4fc;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:7px"><span style="width:28px;height:2px;background:#a5b4fc;display:block"></span>Multiple Linear Regression</div>
+  <h3>Using ALL features at once: y = w&#8321;x&#8321; + w&#8322;x&#8322; + w&#8323;x&#8323; + ... + b</h3>
+  <p>Flat price depends on SIZE, FLOOR, AGE, METRO DISTANCE, BHK count... all simultaneously. Each feature gets its own weight (coefficient) representing its individual contribution <em>while holding all other features constant</em>.</p>
+  <div class="gbullets">
+    <div class="gb"><strong>Coefficient Meaning</strong>w&#8321; = &#8377;6,800 means "one extra sq ft adds &#8377;6,800 &mdash; keeping floor, age, metro distance the same." This is called <em>ceteris paribus</em> (Latin: all else equal).</div>
+    <div class="gb"><strong>Negative Coefficients</strong>Age coefficient = &#8722;&#8377;950/year. Older flat = lower price. Metro distance = &#8722;&#8377;3,200/km. Further from metro = lower price. Negative is MEANINGFUL &mdash; not a bug!</div>
+    <div class="gb"><strong>Real Example: Magicbricks</strong>Used Multiple Linear Regression for first property valuation. Features: area, locality tier, floor, age, BHK, distance from IT park. Each coefficient was business-interpretable.</div>
+    <div class="gb"><strong>Key Assumption</strong>Features should NOT be perfectly correlated with each other (multicollinearity). If "income" and "salary" are both features, the model gets confused about which one to credit. Solution: Ridge/Lasso (Module 3).</div>
+  </div>
+</div>
+
+<div class="dark" style="margin:14px 0">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.72em;letter-spacing:.1em;margin-bottom:10px">DATASET: 10 Mumbai Flats &mdash; See if you can spot the patterns before the model does</div>
+  <div style="overflow-x:auto">
+  <table class="dtbl">
+    <thead><tr><th>Locality</th><th>Size sqft</th><th>Floor</th><th>Age yr</th><th>Metro km</th><th>BHK</th><th>Actual &#8377;L</th><th>Predicted &#8377;L</th></tr></thead>
+    <tbody>
+      <tr><td>Bandra W</td><td class="hi">1200</td><td>8</td><td>5</td><td>0.4</td><td>3</td><td class="g">145</td><td class="g">141.2</td></tr>
+      <tr><td>Andheri E</td><td class="hi">850</td><td>4</td><td>12</td><td>1.2</td><td>2</td><td class="y">78</td><td class="y">81.3</td></tr>
+      <tr><td>Worli</td><td class="hi">2100</td><td>22</td><td>3</td><td>0.9</td><td>4</td><td class="g">380</td><td class="g">374.5</td></tr>
+      <tr><td>Thane W</td><td class="hi">1050</td><td>3</td><td>15</td><td>0.3</td><td>2</td><td class="y">62</td><td class="y">65.8</td></tr>
+      <tr><td>Lower Parel</td><td class="hi">1600</td><td>18</td><td>2</td><td>0.6</td><td>3</td><td class="g">310</td><td class="g">318.2</td></tr>
+      <tr><td>Goregaon E</td><td class="hi">700</td><td>2</td><td>20</td><td>0.8</td><td>1</td><td class="r">48</td><td class="r">51.6</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div style="margin-top:10px;padding:10px 12px;background:#0a1628;border-radius:7px;font-size:.82em;color:#93c5fd;line-height:1.8">
+    <strong style="color:var(--gold)">Learned coefficients:</strong> Size +&#8377;6,800/sqft &bull; Floor +&#8377;1,200/floor &bull; Age &minus;&#8377;950/yr &bull; Metro &minus;&#8377;3,200/km &bull; BHK +&#8377;8,500/room
+  </div>
+</div>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('brain1')">
+    <div class="acc-left"><div class="acc-ico">&#129504;</div><div><div class="acc-title">Brain Teaser: The Negative Coefficient Puzzle (+15 XP)</div><div class="acc-sub">IPL salary model has a NEGATIVE coefficient for player age. Is the model broken?</div></div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+15 XP</span><span class="acc-arr" id="brain1-arr">&#9660;</span></div>
+  </div>
+  <div class="acc-body" id="brain1-body">
+    <p style="font-size:.9em;line-height:1.7;margin-bottom:12px">An IPL auction salary prediction model has coefficient for "age" = <strong>&minus;&#8377;12 Lakhs per year</strong>. A manager says "older players are more experienced &mdash; they should earn more!" Is the model wrong?</p>
+    <div class="qopt" onclick="cq('bt1',this,false)"><div class="qm">A</div>Yes &mdash; the model is broken. Older players always earn more.</div>
+    <div class="qopt" onclick="cq('bt1',this,true)"><div class="qm">B</div>No &mdash; after controlling for performance (runs, wickets, strike rate), the older player earns less because their stats have declined. The coefficient isolates the "pure age effect" after removing performance effects.</div>
+    <div class="qopt" onclick="cq('bt1',this,false)"><div class="qm">C</div>No &mdash; but we should remove age as a feature since it seems problematic.</div>
+    <div class="qfb" id="bt1-fb"></div>
+    <div style="margin-top:10px;padding:10px;background:#eff6ff;border-radius:7px;font-size:.84em;line-height:1.7">&#128161; <strong>Key Insight:</strong> In multiple regression, each coefficient is the effect of ONE variable while ALL others are held constant. This is called "controlling for confounders" &mdash; one of the most powerful ideas in data analysis.</div>
+  </div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; Knowledge Check &mdash; Linear Regression (+20 XP)</h4>
+  <div class="qprompt">Flipkart&apos;s demand model has coefficient for "discount_pct" = 2,400. What does this mean exactly?</div>
+  <div class="qopt" onclick="cq('q1a',this,false)"><div class="qm">A</div>The model predicts exactly 2,400 units regardless of discount</div>
+  <div class="qopt" onclick="cq('q1a',this,true)"><div class="qm">B</div>Each 1% increase in discount is associated with 2,400 more units sold, while all other features (brand, season, category, price) stay the same</div>
+  <div class="qopt" onclick="cq('q1a',this,false)"><div class="qm">C</div>Discount causes exactly 2,400 unit increases &mdash; a direct causal relationship</div>
+  <div class="qopt" onclick="cq('q1a',this,false)"><div class="qm">D</div>Discount explains 2,400% of demand variation</div>
+  <div class="qfb" id="q1a-fb"></div>
+</div>
+
+<div class="nb">
+  <button class="btn ghost" onclick="showMod(0)">&larr; What is Regression?</button>
+  <button class="btn" onclick="showMod(2)">&#9314; L1, L2 &amp; Elastic Net &rarr;</button>
+</div>
+</div>
+
+<div class="mod" id="mod2">
+<div class="stitle">Regularization: L1, L2 &amp; Elastic Net</div>
+<div class="ssub">The single most important idea in practical ML. Stop your model from memorising nonsense and start making it genuinely smart.</div>
+
+<div class="card">
+  <div style="font-size:1.3em;margin-bottom:10px">&#127891; Story: The Over-Confident Student</div>
+  <p style="font-size:.91em;line-height:1.8;margin-bottom:12px">Rahul has 50 features to predict flat prices. He trains a plain linear regression. <strong>Training accuracy: 99%.</strong> Rahul is thrilled. But when he tests on new flats, accuracy crashes to 52%. Why?</p>
+  <div class="g2">
+    <div class="hbox hbox-red"><h4>&#128680; What went wrong</h4><p style="font-size:.84em;line-height:1.7">The model found that "distance from the nearest KFC" accidentally correlated with high prices in the training data (KFCs happened to open in posh areas). It put a HUGE weight on KFC distance. On new data? That correlation vanishes. The model fails.</p></div>
+    <div class="hbox hbox-green"><h4>&#9989; The Regularization Fix</h4><p style="font-size:.84em;line-height:1.7">Add a PENALTY for large coefficients. Now the model must JUSTIFY having a big weight. KFC distance has to prove it&apos;s genuinely useful &mdash; not just lucky in training data. Result: simpler, more honest, more accurate model.</p></div>
+  </div>
+  <div class="info" style="margin-top:12px">&#128161; <strong>The Core Idea:</strong> Instead of only minimising prediction error, minimise: <strong>Prediction Error + &lambda; &times; (Penalty for big coefficients)</strong>. The &lambda; (lambda) controls the balance. Big &lambda; = heavily penalise complexity. Small &lambda; = close to plain linear regression.</div>
+</div>
+
+<div class="div"><span>&#128269; L2 regularization &mdash; ridge regression (the shrinker)</span></div>
+
+<div class="card">
+  <h3 style="font-size:1.1em;font-weight:800;margin-bottom:12px">&#128737;&#65039; Ridge (L2): "Shrink Everyone, Keep Everyone"</h3>
+  <div class="ana">
+    <div class="ana-a">
+      <h5>&#128204; The Exam Analogy</h5>
+      <p>The teacher gives 5 marks for the answer AND deducts marks if your answer is longer than needed. You still answer every question, but you keep answers short and to the point. <br><strong>Ridge = shrink all coefficients, but keep all features.</strong></p>
+    </div>
+    <div class="ana-b">
+      <h5>&#128209; The Maths (Plain English)</h5>
+      <p>Ridge adds <strong>&lambda; &times; sum(w&sup2;)</strong> to the cost.<br>Squaring means BIG weights are punished MASSIVELY more than small ones.<br>w=10 contributes 100 to penalty.<br>w=100 contributes 10,000.<br>Result: extreme weights get crushed.</p>
+    </div>
+  </div>
+  <div class="formula">Cost = &Sigma;(y &minus; &ycirc;)&sup2; &nbsp;+&nbsp; &lambda; &times; &Sigma;w<sub>i</sub>&sup2;</div>
+  <div class="fparts">
+    <div class="fp"><div class="fs">&Sigma;(y&minus;&ycirc;)&sup2;</div><div class="fd"><strong>Prediction error</strong> &mdash; same as ordinary linear regression. We still want accurate predictions.</div></div>
+    <div class="fp"><div class="fs">&lambda; &times; &Sigma;w&sup2;</div><div class="fd"><strong>Ridge penalty (L2)</strong> &mdash; sum of squared weights times lambda. Makes large coefficients very expensive.</div></div>
+    <div class="fp"><div class="fs">&lambda; (lambda)</div><div class="fd"><strong>Strength knob</strong> &mdash; &lambda;=0 gives plain linear regression. Higher &lambda; = more shrinkage. Find best &lambda; using Cross-Validation.</div></div>
+  </div>
+  <div class="hbox hbox-blue" style="margin-top:12px">
+    <h4>&#127974; Real Indian Example: Bajaj Finance</h4>
+    <p style="font-size:.84em;line-height:1.75">50 features: salary, EMI history, city, employer, age, existing loans, credit utilisation, CIBIL score... Many are correlated (credit spend &amp; credit utilisation both measure "how much credit you use"). Plain linear regression: puts HUGE weight on one, ignores the other &mdash; randomly. <strong>Ridge: spreads weight between both correlated features sensibly. Stable. Reliable. Passes RBI audit.</strong></p>
+  </div>
+</div>
+
+<div class="div"><span>&#128269; L1 regularization &mdash; lasso regression (the killer)</span></div>
+
+<div class="card">
+  <h3 style="font-size:1.1em;font-weight:800;margin-bottom:12px">&#127919; Lasso (L1): "Shrink Some, KILL Others"</h3>
+  <div class="ana">
+    <div class="ana-a">
+      <h5>&#128204; The Budget Analogy</h5>
+      <p>You have a &#8377;100 monthly budget for apps. You MUST pay per feature you keep. Cheap useful apps stay. Expensive useless apps get DELETED entirely &mdash; not just reduced.<br><strong>Lasso = zero out irrelevant features completely.</strong></p>
+    </div>
+    <div class="ana-b">
+      <h5>&#128209; The Maths (Plain English)</h5>
+      <p>Lasso adds <strong>&lambda; &times; sum(|w|)</strong> to cost.<br>Absolute value (not squared) creates a geometric property: the minimum often falls exactly where some weights = <strong>ZERO</strong>.<br>This is called <em>sparsity</em> &mdash; most features are completely switched off.</p>
+    </div>
+  </div>
+  <div class="formula">Cost = &Sigma;(y &minus; &ycirc;)&sup2; &nbsp;+&nbsp; &lambda; &times; &Sigma;|w<sub>i</sub>|</div>
+  <div class="fparts">
+    <div class="fp"><div class="fs">&Sigma;|w<sub>i</sub>|</div><div class="fd"><strong>L1 penalty</strong> &mdash; sum of ABSOLUTE values (not squared). The geometry of absolute value creates exact zeros at the optimal solution. This is the key mathematical difference from Ridge.</div></div>
+    <div class="fp"><div class="fs">Zero weights</div><div class="fd"><strong>Automatic feature selection!</strong> With 50 features, Lasso might keep 12 with non-zero weights and zero out 38. Those 38 are effectively removed from the model.</div></div>
+  </div>
+
+  <div class="div" style="margin:14px 0"><span>why does L1 create zeros but L2 doesn&apos;t? the geometry</span></div>
+  <div style="background:#0f172a;border-radius:12px;padding:18px;margin:12px 0">
+    <div style="font-family:var(--mono);font-size:.68em;color:#64748b;margin-bottom:12px">L1 vs L2 GEOMETRY &mdash; WHY L1 CREATES EXACT ZEROS</div>
+    <div class="g2">
+      <div style="background:#1e293b;border-radius:9px;padding:14px;border:2px solid #334155">
+        <div style="font-family:var(--mono);color:#7dd3fc;font-size:.75em;font-weight:700;margin-bottom:8px">L2 (Ridge) &mdash; CIRCLE constraint</div>
+        <div style="text-align:center;margin:10px 0">
+          <svg viewBox="0 0 120 100" style="width:100%;max-width:160px">
+            <ellipse cx="60" cy="50" rx="40" ry="30" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4"/>
+            <circle cx="60" cy="50" r="3" fill="#3b82f6"/>
+            <text x="65" y="48" fill="#94a3b8" font-size="7">L2 region</text>
+            <ellipse cx="85" cy="35" rx="28" ry="22" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+            <ellipse cx="85" cy="35" rx="16" ry="13" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+            <ellipse cx="85" cy="35" rx="7" ry="5" fill="#f59e0b" fill-opacity=".3" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="82" y="28" fill="#f59e0b" font-size="6">error</text>
+            <circle cx="66" cy="42" r="3" fill="#ef4444"/>
+            <text x="68" y="40" fill="#ef4444" font-size="6">solution</text>
+            <text x="5" y="90" fill="#94a3b8" font-size="7">Smooth circle: solution rarely hits axis</text>
+            <text x="5" y="98" fill="#fca5a5" font-size="7">&rarr; weights shrink but rarely = 0</text>
+          </svg>
+        </div>
+      </div>
+      <div style="background:#1e293b;border-radius:9px;padding:14px;border:2px solid #334155">
+        <div style="font-family:var(--mono);color:#86efac;font-size:.75em;font-weight:700;margin-bottom:8px">L1 (Lasso) &mdash; DIAMOND constraint</div>
+        <div style="text-align:center;margin:10px 0">
+          <svg viewBox="0 0 120 100" style="width:100%;max-width:160px">
+            <polygon points="60,20 90,50 60,80 30,50" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="4"/>
+            <circle cx="60" cy="50" r="3" fill="#22c55e"/>
+            <text x="62" y="48" fill="#94a3b8" font-size="7">L1 region</text>
+            <ellipse cx="82" cy="30" rx="28" ry="22" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+            <ellipse cx="82" cy="30" rx="16" ry="13" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+            <ellipse cx="82" cy="30" rx="7" ry="5" fill="#f59e0b" fill-opacity=".3" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="79" y="23" fill="#f59e0b" font-size="6">error</text>
+            <circle cx="60" cy="20" r="3" fill="#ef4444"/>
+            <text x="62" y="18" fill="#ef4444" font-size="6">solution (CORNER!)</text>
+            <text x="5" y="90" fill="#94a3b8" font-size="7">Diamond has CORNERS on axes:</text>
+            <text x="5" y="98" fill="#86efac" font-size="7">&rarr; solution lands on corner, weight = 0!</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:#1e293b;border-radius:7px;font-size:.81em;color:#94a3b8;line-height:1.7">
+      &#128161; <strong style="color:#fff">The Diamond Trick:</strong> The L1 constraint region looks like a diamond (in 2D). The optimal solution is where the elliptical error contours first TOUCH the diamond &mdash; and that&apos;s almost always at a CORNER. Corners are on the axes, which means one weight = 0. This is why Lasso creates sparsity mathematically.
+    </div>
+  </div>
+
+  <div class="hbox hbox-green" style="margin-top:12px">
+    <h4>&#127973; Real Indian Example: AIIMS Genomics Study</h4>
+    <p style="font-size:.84em;line-height:1.75">20,000 genes as potential features to predict patient chemo response. Plain linear regression with 20,000 features and only 800 patients = disaster (far more features than samples). <strong>Lasso automatically zeros out 19,850 irrelevant genes and identifies 150 genuinely predictive biomarkers.</strong> Doctors now know exactly which 150 genes to test. That&apos;s actionable science.</p>
+  </div>
+</div>
+
+<div class="div"><span>elastic net &mdash; ridge + lasso combined</span></div>
+<div class="card">
+  <h3 style="font-size:1.1em;font-weight:800;margin-bottom:12px">&#9878;&#65039; Elastic Net: "I Can&apos;t Choose &mdash; I&apos;ll Have Both"</h3>
+  <div class="formula">Cost = &Sigma;(y&minus;&ycirc;)&sup2; + &lambda;&times;[&alpha;&times;&Sigma;|w| + (1&minus;&alpha;)&times;&Sigma;w&sup2;]</div>
+  <div class="g3" style="margin-top:12px">
+    <div class="hbox hbox-gold"><h4>&alpha; = 1.0 &rarr; Pure Lasso</h4><p style="font-size:.82em">Only L1 penalty. Maximum feature killing. Use when most features are noise.</p></div>
+    <div class="hbox hbox-blue"><h4>&alpha; = 0.5 &rarr; Equal Mix</h4><p style="font-size:.82em">Half L1, half L2. Good default when unsure. Most practical use cases.</p></div>
+    <div class="hbox hbox-green"><h4>&alpha; = 0.0 &rarr; Pure Ridge</h4><p style="font-size:.82em">Only L2 penalty. Keeps all features. Use when all features are relevant.</p></div>
+  </div>
+  <div class="warn" style="margin-top:10px">&#9888;&#65039; <strong>Lasso weakness:</strong> When two features are highly correlated, Lasso arbitrarily picks one and zeros the other. Elastic Net keeps both, just with smaller weights. Use Elastic Net when you have correlated features AND want some selection.</div>
+</div>
+
+<div class="div"><span>&#127918; live regularization simulator</span></div>
+<div class="ibox">
+  <h4>&#127918; Regularization Simulator <span class="itag">LIVE</span></h4>
+  <p style="font-size:.84em;color:#555;margin-bottom:14px">8 loan features. One is <strong style="color:var(--a1)">pure noise &#9888;</strong>. Increase &lambda;. Switch between Ridge and Lasso. Watch: Ridge shrinks all, Lasso <em>kills</em> the noise feature to exactly zero!</p>
+  <div class="g2">
+    <div>
+      <div class="slrow"><div class="sllbl"><span>&lambda; Strength</span><span class="slval" id="sv-lam">0.5</span></div><input type="range" min="0" max="100" value="5" step="1" id="sl-lam" oninput="updateReg()"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--ink);border-radius:8px;overflow:hidden;margin:9px 0">
+        <div id="rt-ridge" style="padding:8px;text-align:center;cursor:pointer;font-size:.82em;font-weight:700;background:var(--ink);color:#fff;transition:.15s" onclick="setRT('ridge')">&#128737;&#65039; Ridge</div>
+        <div id="rt-lasso" style="padding:8px;text-align:center;cursor:pointer;font-size:.82em;font-weight:700;background:#fff;color:var(--ink);transition:.15s" onclick="setRT('lasso')">&#127919; Lasso</div>
+      </div>
+      <div id="coef-list" style="margin-top:8px"></div>
+      <div id="reg-verdict" style="margin-top:8px;font-size:.8em;line-height:1.6;padding:8px;background:#f8f8f8;border-radius:7px"></div>
+    </div>
+    <div class="cbox"><canvas id="cv-reg" height="250"></canvas></div>
+  </div>
+</div>
+
+<div class="div"><span>ridge vs lasso vs elastic net &mdash; when to use which</span></div>
+<table class="ctbl">
+  <thead><tr><th>Situation</th><th>&#128737;&#65039; Ridge</th><th>&#127919; Lasso</th><th>&#9878;&#65039; Elastic Net</th></tr></thead>
+  <tbody>
+    <tr><td>All features are useful, some correlated</td><td style="color:var(--a3)">&#10003; Best choice</td><td>&#10007; Kills good features</td><td>&#10003; Good too</td></tr>
+    <tr><td>Most features are irrelevant noise</td><td>&#10007; Keeps noise</td><td style="color:var(--a3)">&#10003; Best choice</td><td>&#10003; Good too</td></tr>
+    <tr><td>Features > Samples (genomics)</td><td>&#10007; Unstable</td><td style="color:var(--a3)">&#10003; Best choice</td><td>&#10003; Good too</td></tr>
+    <tr><td>Correlated features + want selection</td><td>&#10003; Handles correlation</td><td>&#10007; Randomly picks one</td><td style="color:var(--a3)">&#10003; Best choice</td></tr>
+    <tr><td>You don&apos;t know which to use</td><td>&mdash;</td><td>&mdash;</td><td style="color:var(--a3)">&#10003; Safe default</td></tr>
+  </tbody>
+</table>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('reg-dd')">
+    <div class="acc-left"><div class="acc-ico">&#127919;</div><div><div class="acc-title">Drag &amp; Drop Challenge: Match the Scenario! (+20 XP)</div><div class="acc-sub">Drag each problem to the right algorithm box</div></div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+20 XP</span><span class="acc-arr" id="reg-dd-arr">&#9660;</span></div>
+  </div>
+  <div class="acc-body" id="reg-dd-body">
+    <p style="font-size:.87em;margin-bottom:12px;color:#555">Drag each problem card to the correct algorithm. You can only drop once &mdash; make it count!</p>
+    <div class="drag-pool" id="dp1">
+      <div class="drag-item" draggable="true" data-key="genomics" ondragstart="ds(event)">&#127973; AIIMS: 20,000 genes, 800 patients, find 15 key genes</div>
+      <div class="drag-item" draggable="true" data-key="cibil" ondragstart="ds(event)">&#127974; CIBIL: 50 correlated financial features, all matter</div>
+      <div class="drag-item" draggable="true" data-key="swiggy" ondragstart="ds(event)">&#128757; Swiggy: 200 features, many correlated, want some selection</div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="dz-label">&#128737;&#65039; Ridge (L2)</div>
+      <div class="drop-zone" id="dz-ridge" ondragover="dov(event)" ondrop="drp(event,'ridge')" data-correct="cibil">Drop here</div>
+      <div class="dz-label">&#127919; Lasso (L1)</div>
+      <div class="drop-zone" id="dz-lasso" ondragover="dov(event)" ondrop="drp(event,'lasso')" data-correct="genomics">Drop here</div>
+      <div class="dz-label">&#9878;&#65039; Elastic Net</div>
+      <div class="drop-zone" id="dz-enet" ondragover="dov(event)" ondrop="drp(event,'enet')" data-correct="swiggy">Drop here</div>
+    </div>
+    <div id="dd-result" style="margin-top:10px;font-size:.85em;line-height:1.7"></div>
+  </div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; Knowledge Check &mdash; Regularization (+20 XP)</h4>
+  <div class="qprompt">An HDFC model with 200 features is trained. Training accuracy = 99%. Test accuracy = 51%. She adds Lasso. After training, 173 features have weight = exactly 0. Is this good or bad?</div>
+  <div class="qopt" onclick="cq('q2a',this,false)"><div class="qm">A</div>Bad &mdash; Lasso destroyed the model by removing too many features</div>
+  <div class="qopt" onclick="cq('q2a',this,true)"><div class="qm">B</div>Excellent! Only 27 features truly predict loan amount. The other 173 were noise causing severe overfitting. The model will now generalise well to new loan applications.</div>
+  <div class="qopt" onclick="cq('q2a',this,false)"><div class="qm">C</div>Use Ridge instead &mdash; Ridge would have kept all 200 features</div>
+  <div class="qfb" id="q2a-fb"></div>
+</div>
+
+<div class="nb">
+  <button class="btn ghost" onclick="showMod(1)">&larr; Linear Regression</button>
+  <button class="btn" onclick="showMod(3)">&#9315; Advanced Algorithms &rarr;</button>
+</div>
+</div>
+
+<div class="mod" id="mod3">
+<div class="stitle">Advanced Regression Algorithms</div>
+<div class="ssub">When straight lines fail &mdash; SVR, Decision Trees, Random Forests, and XGBoost explained through pure stories and visuals.</div>
+
+<div class="stabs">
+  <div class="st on" onclick="showST('svr',this)">&#9876;&#65039; SVR</div>
+  <div class="st" onclick="showST('dtr',this)">&#127795; Decision Tree</div>
+  <div class="st" onclick="showST('rf',this)">&#127794; Random Forest</div>
+  <div class="st" onclick="showST('gbm',this)">&#128640; XGBoost</div>
+  <div class="st" onclick="showST('poly3',this)">&#128200; Polynomial</div>
+  <div class="st" onclick="showST('compare',this)">&#128202; Compare All</div>
+</div>
+
+<!-- SVR TAB -->
+<div class="sp on" id="sp-svr">
+<div class="card">
+  <div style="font-size:1.25em;font-weight:800;margin-bottom:10px">&#9876;&#65039; SVR: "I Ignore Small Mistakes On Purpose"</div>
+  <div class="ana">
+    <div class="ana-a">
+      <h5>&#128204; The Speed Limit Analogy</h5>
+      <p>A traffic cop ignores cars doing 60-65 in a 60 zone (small violation &mdash; no penalty). Only cars doing 80+ get a ticket. SVR defines an "acceptable error band" (&epsilon;). Predictions within the band &rarr; no penalty. Only errors OUTSIDE the band matter. <strong>Result: model is not distracted by tiny, irrelevant errors.</strong></p>
+    </div>
+    <div class="ana-b">
+      <h5>&#128209; In ML Terms</h5>
+      <p>SVR fits a tube of width &epsilon; around the data. Points inside the tube: ignored. Points outside: become "support vectors" that define the model. If one flat is priced &#8377;50 Crore (ultra-luxury outlier), it lands outside the tube but does NOT drag the entire line upward. <strong>Robust to outliers.</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="dark">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.7em;margin-bottom:10px">SVR DATAFLOW &mdash; BSE STOCK PRICE PREDICTION</div>
+  <div class="flow">
+    <div class="frow">
+      <div class="fn hl"><div class="fi">&#128202;</div><div class="fl">Market Data</div><div class="fs2">5yr BSE history incl. crash days</div></div>
+      <div class="fa">&rarr;</div>
+      <div class="fn"><div class="fi">&#128207;</div><div class="fl">Set &epsilon;=2%</div><div class="fs2">Acceptable prediction error band</div></div>
+      <div class="fa">&rarr;</div>
+      <div class="fn"><div class="fi">&#127992;</div><div class="fl">Fit the Tube</div><div class="fs2">Minimise errors outside tube</div></div>
+      <div class="fa">&rarr;</div>
+      <div class="fn"><div class="fi">&#9889;</div><div class="fl">Support Vectors</div><div class="fs2">2008 crash day = outlier, noted but not dominant</div></div>
+      <div class="fa">&rarr;</div>
+      <div class="fn ok"><div class="fi">&#9989;</div><div class="fl">Robust Model</div><div class="fs2">Crash days don&apos;t break predictions</div></div>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:12px">
+    <div style="background:#1a0a0a;border-radius:9px;padding:13px;border-left:3px solid var(--a1)">
+      <div style="font-family:var(--mono);color:#fca5a5;font-size:.75em;font-weight:700;margin-bottom:7px">Without SVR (Linear Reg)</div>
+      <p style="color:#e2e8f0;font-size:.83em;line-height:1.8">499 normal market days + 1 COVID crash day (-40%). Linear regression: the crash day PULLS the entire trend line down. All normal day predictions are now off by 8-12%. <strong style="color:#fca5a5">One outlier corrupts 499 good predictions.</strong></p>
+    </div>
+    <div style="background:#0a1a0a;border-radius:9px;padding:13px;border-left:3px solid var(--a3)">
+      <div style="font-family:var(--mono);color:#86efac;font-size:.75em;font-weight:700;margin-bottom:7px">With SVR (&epsilon;=2%)</div>
+      <p style="color:#e2e8f0;font-size:.83em;line-height:1.8">COVID crash day is far outside the tube. It becomes a support vector &mdash; noted, but weighted appropriately. The 499 normal market day predictions remain accurate. <strong style="color:#86efac">Outliers inform, not dominate.</strong></p>
+    </div>
+  </div>
+  <div class="purple-strip" style="margin-top:12px">
+    <strong>&#128302; Kernel Trick (for non-linear SVR):</strong> Using "kernels" (mathematical transformations), SVR can fit curves, spirals, and complex non-linear shapes. The RBF kernel projects data into infinite dimensions where any smooth curve becomes a straight line. Used in electricity demand forecasting, weather modelling.
+  </div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; SVR Check (+15 XP)</h4>
+  <div class="qprompt">A hotel pricing model uses SVR with &epsilon;=&#8377;500. A booking at &#8377;8,200 is predicted as &#8377;8,600 (error = &#8377;400). Another booking at &#8377;12,000 is predicted as &#8377;9,500 (error = &#8377;2,500). Which booking&apos;s error contributes to model training?</div>
+  <div class="qopt" onclick="cq('q3a',this,false)"><div class="qm">A</div>Both &mdash; all errors always contribute in SVR</div>
+  <div class="qopt" onclick="cq('q3a',this,false)"><div class="qm">B</div>Only the &#8377;400 error &mdash; it is within the acceptable band</div>
+  <div class="qopt" onclick="cq('q3a',this,true)"><div class="qm">C</div>Only the &#8377;2,500 error &mdash; it exceeds &epsilon;=&#8377;500, so this booking becomes a support vector. The &#8377;400 error is within the tube and is ignored.</div>
+  <div class="qfb" id="q3a-fb"></div>
+</div>
+</div>
+
+<!-- DECISION TREE TAB -->
+<div class="sp" id="sp-dtr">
+<div class="card">
+  <div style="font-size:1.25em;font-weight:800;margin-bottom:10px">&#127795; Decision Tree: "The Flowchart That Predicts — OR Classifies"</div>
+  <p style="font-size:.91em;line-height:1.8;margin-bottom:12px">A Decision Tree is a <strong>dual-purpose algorithm</strong> — the same tree structure works for both regression (predict a number) and classification (predict a category). The only difference is in the <em>last step</em>: what happens at each leaf node.</p>
+  <div class="g2">
+    <div class="hbox hbox-blue">
+      <h4>&#128202; Decision Tree as REGRESSOR</h4>
+      <p style="font-size:.84em;line-height:1.75"><strong>Leaf node outputs:</strong> the <em>average value</em> of all training samples in that leaf.<br><br><strong>Example:</strong> Zomato delivery time prediction.<br>Leaf: "distance &gt;5km AND raining" → avg of all such deliveries = <strong>55 minutes</strong><br><br><strong>Splits chosen by:</strong> minimising variance (RSS) in each child node.</p>
+    </div>
+    <div class="hbox hbox-gold">
+      <h4>&#127919; Decision Tree as CLASSIFIER</h4>
+      <p style="font-size:.84em;line-height:1.75"><strong>Leaf node outputs:</strong> the <em>majority class</em> (most common category) in that leaf.<br><br><strong>Example:</strong> Loan default prediction.<br>Leaf: "income &lt;₹3L AND EMI &gt;₹15k" → 87% defaulters → predict <strong>DEFAULT</strong><br><br><strong>Splits chosen by:</strong> minimising impurity (Gini / Entropy) in each child node.</p>
+    </div>
+  </div>
+  <div class="info" style="margin-top:12px">&#128161; <strong>Same tree. Different goal. Different split criterion. Different leaf output.</strong> That's the only difference between DT Regressor and DT Classifier.</div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:1.05em;font-weight:800;margin-bottom:12px">&#128202; Side-by-Side: Same Data, Two Problems</h3>
+  <div style="overflow-x:auto">
+  <table class="ctbl">
+    <thead><tr><th>Aspect</th><th>&#128202; DT Regressor</th><th>&#127919; DT Classifier</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Output</strong></td><td>A number (₹, minutes, kg)</td><td>A category (Yes/No, A/B/C)</td></tr>
+      <tr><td><strong>Leaf prediction</strong></td><td>Average of samples in leaf</td><td>Majority class in leaf</td></tr>
+      <tr><td><strong>Split criterion</strong></td><td>Minimum RSS (variance)</td><td>Minimum Gini impurity or Entropy</td></tr>
+      <tr><td><strong>Zomato example</strong></td><td>Predict delivery = <strong>34 mins</strong></td><td>Predict will be late = <strong>YES</strong></td></tr>
+      <tr><td><strong>Bank example</strong></td><td>Predict loan amount = <strong>₹28L</strong></td><td>Predict default = <strong>YES / NO</strong></td></tr>
+      <tr><td><strong>Real estate</strong></td><td>Predict price = <strong>₹62L</strong></td><td>Predict sells within 90 days = <strong>YES</strong></td></tr>
+      <tr><td><strong>Interpretability</strong></td><td>&#9989; Full IF-THEN flowchart</td><td>&#9989; Full IF-THEN flowchart</td></tr>
+      <tr><td><strong>Overfitting risk</strong></td><td>&#10071; High without pruning</td><td>&#10071; High without pruning</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div style="background:#0f172a;border-radius:13px;padding:18px;margin:14px 0;border:2px solid #1e293b">
+  <div style="font-family:var(--mono);font-size:.67em;color:#64748b;margin-bottom:12px">DUAL TREE EXAMPLE — ZOMATO ORDER #47291</div>
+  <div class="g2">
+    <div>
+      <div style="font-family:var(--mono);color:#7dd3fc;font-size:.73em;font-weight:700;margin-bottom:8px">&#128202; REGRESSOR TREE (predict minutes)</div>
+      <div style="font-size:.82em;color:#e2e8f0;line-height:2.2;background:#1e293b;border-radius:8px;padding:12px">
+        &#128205; Distance &gt;5km?<br>
+        <span style="margin-left:14px">YES &#8594; &#127783; Raining?</span><br>
+        <span style="color:#fde68a;margin-left:28px">YES &#8594; leaf: avg=<strong>55 min</strong></span><br>
+        <span style="margin-left:28px">NO &#8594; Peak hour?</span><br>
+        <span style="color:#86efac;margin-left:42px">NO &#8594; leaf: avg=<strong>38 min</strong></span><br>
+        <span style="margin-left:14px">NO &#8594; &#127829; Complex?</span><br>
+        <span style="color:#86efac;margin-left:28px">NO &#8594; leaf: avg=<strong>17 min</strong></span>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:var(--mono);color:#fde68a;font-size:.73em;font-weight:700;margin-bottom:8px">&#127919; CLASSIFIER TREE (predict late Y/N)</div>
+      <div style="font-size:.82em;color:#e2e8f0;line-height:2.2;background:#1e293b;border-radius:8px;padding:12px">
+        &#128205; Distance &gt;5km?<br>
+        <span style="margin-left:14px">YES &#8594; &#127783; Raining?</span><br>
+        <span style="color:#fca5a5;margin-left:28px">YES &#8594; leaf: 91% late &#8594; <strong>LATE</strong></span><br>
+        <span style="margin-left:28px">NO &#8594; Peak hour?</span><br>
+        <span style="color:#86efac;margin-left:42px">NO &#8594; leaf: 8% late &#8594; <strong>ON TIME</strong></span><br>
+        <span style="margin-left:14px">NO &#8594; &#127829; Complex?</span><br>
+        <span style="color:#86efac;margin-left:28px">NO &#8594; leaf: 3% late &#8594; <strong>ON TIME</strong></span>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:10px;padding:9px 12px;background:#1e293b;border-radius:7px;font-family:var(--mono);font-size:.72em;color:#94a3b8">
+    Order #47291: distance=6km, rain=NO, peak=YES &#8594; Regressor: <strong style="color:#fde68a">45 minutes</strong> &nbsp;|&nbsp; Classifier: <strong style="color:#fca5a5">LATE (peak hour penalty)</strong>
+  </div>
+</div>
+
+<div class="vs">
+  <div class="vs-a"><h4>&#128680; The Problem: Overfitting</h4><p>A very deep tree memorises training data perfectly (train accuracy = 100%) but fails on new data. It memorises "order #47 took 63 minutes" instead of learning the pattern.</p></div>
+  <div class="vs-mid">VS</div>
+  <div class="vs-b"><h4>&#9989; The Fix: Pruning &amp; Depth Limit</h4><p>Limit tree depth (max 5 levels). Each leaf must have ≥10 samples. Use cross-validation to find optimal depth. Or use Random Forest to eliminate this problem entirely.</p></div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; Decision Tree Check (+15 XP)</h4>
+  <div class="qprompt">IRDAI (insurance regulator) needs a model to set motor insurance premiums (₹ amount). The model must be auditable — an officer must manually explain why premium ₹18,400 was charged to this customer. Which is best?</div>
+  <div class="qopt" onclick="cq('q3b',this,false)"><div class="qm">A</div>XGBoost Regressor — most accurate algorithm available</div>
+  <div class="qopt" onclick="cq('q3b',this,true)"><div class="qm">B</div>Decision Tree Regressor — every premium traced through IF-THEN rules. "Age &gt;45 AND city=metro AND past claims &gt;0 → ₹18,400 average premium." Fully auditable by regulators.</div>
+  <div class="qopt" onclick="cq('q3b',this,false)"><div class="qm">C</div>Random Forest Regressor — higher accuracy than single tree</div>
+  <div class="qfb" id="q3b-fb"></div>
+</div>
+</div>
+<div class="sp" id="sp-rf">
+<div class="card">
+  <div style="font-size:1.25em;font-weight:800;margin-bottom:10px">&#127794; Random Forest: "Wisdom of the Crowd — For Numbers OR Categories"</div>
+  <p style="font-size:.91em;line-height:1.8;margin-bottom:12px">Like Decision Trees, Random Forest is a <strong>dual-purpose powerhouse</strong> — same forest, two modes. You choose whether you want it to predict a number (regressor) or a category (classifier). It's like a sports commentator who can describe a match numerically ("team scored 312") OR categorically ("team won").</p>
+  <div class="g2">
+    <div class="hbox hbox-blue">
+      <h4>&#128202; Random Forest REGRESSOR</h4>
+      <p style="font-size:.84em;line-height:1.75"><strong>Each tree outputs:</strong> a number (average of leaf)<br><strong>Forest combines by:</strong> <em>averaging</em> all 500 tree outputs<br><br><strong>Example:</strong> 500 trees predict monsoon rainfall as 842mm, 791mm, 878mm... Final: average = <strong>834mm</strong><br><br><strong>Best for:</strong> property prices, demand forecasting, weather prediction, salary estimation</p>
+    </div>
+    <div class="hbox hbox-gold">
+      <h4>&#127919; Random Forest CLASSIFIER</h4>
+      <p style="font-size:.84em;line-height:1.75"><strong>Each tree outputs:</strong> a class (YES/NO, A/B/C)<br><strong>Forest combines by:</strong> <em>majority voting</em> across all 500 trees<br><br><strong>Example:</strong> 500 trees vote on loan default: 380 say DEFAULT, 120 say NO DEFAULT → Final: <strong>DEFAULT</strong> (76% vote)<br><br><strong>Best for:</strong> fraud detection, disease diagnosis, customer churn, spam filtering</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:1.05em;font-weight:800;margin-bottom:12px">&#128202; Head-to-Head: RF Regressor vs RF Classifier</h3>
+  <table class="ctbl">
+    <thead><tr><th>Aspect</th><th>&#128202; RF Regressor</th><th>&#127919; RF Classifier</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Output</strong></td><td>Number (₹, mm, kg, minutes)</td><td>Category (YES/NO, fraud/legit, A/B/C)</td></tr>
+      <tr><td><strong>Aggregation</strong></td><td>Average of 500 tree outputs</td><td>Majority vote of 500 tree outputs</td></tr>
+      <tr><td><strong>Error metric</strong></td><td>RMSE, MAE, R² (how far off?)</td><td>Accuracy, F1, AUC (how often right?)</td></tr>
+      <tr><td><strong>PhonePe example</strong></td><td>Predict fraud amount = <strong>₹12,400</strong></td><td>Predict is fraud = <strong>YES</strong></td></tr>
+      <tr><td><strong>Healthcare example</strong></td><td>Predict patient readmission days = <strong>4.2 days</strong></td><td>Predict will readmit = <strong>YES/NO</strong></td></tr>
+      <tr><td><strong>HR example</strong></td><td>Predict employee salary = <strong>₹14.2L</strong></td><td>Predict will resign = <strong>YES/NO</strong></td></tr>
+      <tr><td><strong>Feature importance</strong></td><td>&#9989; Free (same method)</td><td>&#9989; Free (same method)</td></tr>
+      <tr><td><strong>Overfitting risk</strong></td><td>&#9989; Low (bagging helps)</td><td>&#9989; Low (bagging helps)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="dark">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.7em;margin-bottom:10px">RANDOM FOREST DATAFLOW — SAME FOREST, TWO MODES</div>
+  <div class="flow">
+    <div class="frow">
+      <div class="fn hl"><div class="fi">&#127777;&#65039;</div><div class="fl">Training Data</div><div class="fs2">Features + Target</div></div>
+      <div class="fa">&#8594;</div>
+      <div class="fn"><div class="fi">&#127922;</div><div class="fl">Bootstrap</div><div class="fs2">Random 80% rows + random features</div></div>
+      <div class="fa">&#8594;</div>
+      <div class="fn"><div class="fi">&#127795;&#127795;&#127795;</div><div class="fl">500 Trees</div><div class="fs2">Each sees different subset</div></div>
+      <div class="fa">&#8594;</div>
+      <div class="fn" style="background:#1e3a5f;border-color:#2563eb"><div class="fi">&#128202;</div><div class="fl">Regressor</div><div class="fs2">Average outputs → 834mm rainfall</div></div>
+      <div class="fa" style="color:#555">|</div>
+      <div class="fn" style="background:#1a1a0a;border-color:#d97706"><div class="fi">&#127919;</div><div class="fl">Classifier</div><div class="fs2">Majority vote → DEFAULT (380/500)</div></div>
+    </div>
+  </div>
+  <div class="ok-strip" style="margin-top:12px;background:rgba(22,163,74,.12);border-color:#16a34a">
+    <strong style="color:#86efac">&#127942; Bonus — Feature Importance works identically in both modes!</strong> <span style="color:#e2e8f0">Whether regressor or classifier, Random Forest tells you which features drive predictions. For HDFC loan model: CIBIL score (31%), income (24%), existing EMIs (18%), age (11%)... Use this to focus data collection efforts and explain model decisions to RBI auditors.</span>
+  </div>
+</div>
+
+<div class="card" style="border-left:6px solid var(--purple)">
+  <h3 style="font-size:1em;font-weight:800;margin-bottom:10px">&#128302; When to Choose Regressor vs Classifier?</h3>
+  <div style="font-size:.87em;line-height:1.85;color:#333">
+    <div style="margin-bottom:8px;padding:10px;background:#eff6ff;border-radius:8px"><strong style="color:var(--a2)">Ask yourself: "What does my boss actually need to see?"</strong><br>If the answer is a <em>number</em> on a report (₹62L, 34 mins, 847 units) → <strong>Regressor</strong><br>If the answer is a <em>decision</em> (approve/reject, alert/ignore, churn/stay) → <strong>Classifier</strong></div>
+    <div class="g2">
+      <div style="padding:9px;background:#f0fdf4;border-radius:8px;border-left:3px solid var(--a3)"><strong>Use RF Regressor when:</strong><br>• Setting a price, estimate, or forecast<br>• Output needs to be on a continuous scale<br>• Stakeholders ask "how much?" or "how many?"<br>• E.g. MakeMyTrip hotel pricing, Ola surge multiplier</div>
+      <div style="padding:9px;background:#fef9c3;border-radius:8px;border-left:3px solid var(--gold)"><strong>Use RF Classifier when:</strong><br>• Making a binary or multi-class decision<br>• Output feeds into an action (block, alert, approve)<br>• Stakeholders ask "will it?" or "which one?"<br>• E.g. Paytm fraud flag, HDFC loan approve/reject</div>
+    </div>
+  </div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; Random Forest Check (+15 XP)</h4>
+  <div class="qprompt">An e-commerce company wants to use Random Forest to predict <strong>how many units of a product will sell next month</strong>. Which mode should they use, and why?</div>
+  <div class="qopt" onclick="cq('q3c',this,true)"><div class="qm">A</div>RF Regressor — "units sold" is a continuous number (could be 0, 847, 4,382...). Average the 500 tree outputs to get the final prediction.</div>
+  <div class="qopt" onclick="cq('q3c',this,false)"><div class="qm">B</div>RF Classifier — predict whether units will sell or not (YES/NO)</div>
+  <div class="qopt" onclick="cq('q3c',this,false)"><div class="qm">C</div>Either works — just pick whichever has higher accuracy</div>
+  <div class="qfb" id="q3c-fb"></div>
+</div>
+</div>
+<div class="sp" id="sp-gbm">
+<div class="card">
+  <div style="font-size:1.25em;font-weight:800;margin-bottom:10px">&#128640; XGBoost: "Every Expert Learns from the Last Expert&apos;s Mistakes"</div>
+  <div class="ana">
+    <div class="ana-a">
+      <h5>&#128204; The Study Group Analogy</h5>
+      <p>Student 1 attempts the exam, marks 60/100. Student 2 only studies the 40 questions Student 1 got wrong, marks 80/100 on those. Student 3 focuses on the remaining 20 Student 2 missed. Together: near perfect. <strong>Each learner builds on the last learner&apos;s failures.</strong></p>
+    </div>
+    <div class="ana-b">
+      <h5>&#128209; In ML Terms</h5>
+      <p>Tree 1 predicts everything as average (&#8377;80L). Calculate errors (residuals). Tree 2 predicts those residuals. Add to Tree 1&apos;s output. Calculate new residuals. Tree 3 predicts those. Repeat 300 times. Each iteration, errors shrink. <strong>Sequential, not parallel (unlike Random Forest).</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="dark">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.7em;margin-bottom:12px">XGBOOST STEP-BY-STEP &mdash; VIRAT KOHLI IPL SALARY PREDICTION</div>
+  <div class="tl">
+    <div class="tli"><div class="tls">STEP 0</div><div class="tlt">Initial guess: &#8377;80L (average IPL salary)</div><div class="tld">Kohli&apos;s actual: &#8377;170L. Error (residual) = +&#8377;90L. We&apos;re massively under-predicting the superstar.</div></div>
+    <div class="tli"><div class="tls">TREE 1</div><div class="tlt">Predicts residuals using batting average, centuries, strike rate</div><div class="tld">Tree 1 predicts +&#8377;60L correction for Kohli. New prediction: &#8377;80L + &#8377;60L = &#8377;140L. Remaining error: &#8377;30L.</div></div>
+    <div class="tli"><div class="tls">TREE 2</div><div class="tlt">Predicts remaining &#8377;30L error using brand value, social media</div><div class="tld">Tree 2 predicts +&#8377;22L correction. New: &#8377;140L + &#8377;22L = &#8377;162L. Remaining: &#8377;8L.</div></div>
+    <div class="tli"><div class="tls">TREES 3&ndash;300</div><div class="tlt">Each tree corrects smaller and smaller residuals</div><div class="tld">Learning rate &eta;=0.1 prevents overcorrecting. After 300 trees: <strong>Final = &#8377;168.5L</strong>. Actual was &#8377;170L. Only 0.9% error!</div></div>
+  </div>
+  <div class="warn" style="margin-top:10px;background:rgba(217,119,6,.12);border-color:var(--gold)">
+    <strong style="color:var(--gold)">&#9878;&#65039; Why "Gradient" Boosting?</strong> <span style="color:#e2e8f0">Each tree fits the <em>negative gradient</em> of the loss function &mdash; for simple MSE loss this equals the residuals. But the framework works for ANY differentiable loss function. Want to minimise a custom business cost? Write a custom loss. XGBoost optimises it. This mathematical flexibility is why it dominates industry.</span>
+  </div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; XGBoost Check (+20 XP)</h4>
+  <div class="qprompt">A NITI Aayog data scientist has 5 years of data from 700 districts with 200 satellite + weather + soil features to predict crop yield. Accuracy is paramount. What algorithm?</div>
+  <div class="qopt" onclick="cq('q3d',this,false)"><div class="qm">A</div>Simple Linear Regression &mdash; interpretable and safe</div>
+  <div class="qopt" onclick="cq('q3d',this,false)"><div class="qm">B</div>SVR with RBF kernel &mdash; handles non-linearity</div>
+  <div class="qopt" onclick="cq('q3d',this,true)"><div class="qm">C</div>XGBoost/LightGBM &mdash; best accuracy on tabular data with many features; use SHAP values to explain predictions to policymakers</div>
+  <div class="qopt" onclick="cq('q3d',this,false)"><div class="qm">D</div>Lasso &mdash; automatically selects important features</div>
+  <div class="qfb" id="q3d-fb"></div>
+</div>
+</div>
+
+<!-- COMPARE TAB -->
+<div class="sp" id="sp-poly3">
+<div class="card">
+  <div style="font-size:1.25em;font-weight:800;margin-bottom:12px">&#128200; Polynomial Regression — "What if the relationship is a CURVE, not a line?"</div>
+  <div class="hbox hbox-gold" style="margin-bottom:14px">
+    <h4>&#127968; Start with a story every BCom student will understand</h4>
+    <p style="font-size:.85em;line-height:1.8">You are studying the relationship between a shop's <strong>discount percentage</strong> and <strong>units sold</strong>. Common sense says: more discount = more sales. So a straight line should work, right?<br><br>But wait — data shows something unexpected:<br>
+    &bull; 0% discount → 100 units sold (regular buyers)<br>
+    &bull; 10% discount → 200 units (some extra buyers attracted)<br>
+    &bull; 30% discount → 500 units (major jump!)<br>
+    &bull; 50% discount → 480 units (plateau — everyone who wants it already bought)<br>
+    &bull; 70% discount → 420 units (DROP! Customers think quality is bad)<br><br>
+    <strong>This is NOT a straight line. It goes up, peaks, then comes DOWN. That's a curve — and polynomial regression is built exactly for this.</strong></p>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:1.05em;font-weight:800;margin-bottom:12px">&#128200; Three Real-World Curves You Already Know</h3>
+  <div class="g3">
+    <div style="background:#eff6ff;border-radius:10px;padding:14px;border-top:4px solid var(--a2)">
+      <div style="font-weight:800;color:var(--a2);margin-bottom:7px;font-size:.88em">&#9728;&#65039; ELECTRICITY DEMAND (U-Shape)</div>
+      <div style="text-align:center;margin:10px 0">
+        <svg viewBox="0 0 140 90" style="width:100%;max-width:180px">
+          <line x1="10" y1="80" x2="130" y2="80" stroke="#cbd5e1" stroke-width="1.5"/>
+          <line x1="10" y1="80" x2="10" y2="10" stroke="#cbd5e1" stroke-width="1.5"/>
+          <text x="65" y="88" fill="#94a3b8" font-size="7" text-anchor="middle">Temperature</text>
+          <text x="3" y="45" fill="#94a3b8" font-size="7" text-anchor="middle" transform="rotate(-90,3,45)">Demand</text>
+          <path d="M15 20 Q70 70 125 18" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+          <text x="15" y="16" fill="#2563eb" font-size="6">High&#10;(winter</text>
+          <text x="58" y="76" fill="#94a3b8" font-size="6">18°C</text>
+          <text x="105" y="14" fill="#2563eb" font-size="6">High&#10;(summer)</text>
+          <circle cx="70" cy="65" r="3" fill="#ef4444"/>
+          <text x="62" y="62" fill="#ef4444" font-size="6">Sweet spot</text>
+        </svg>
+      </div>
+      <p style="font-size:.8em;line-height:1.65;color:#1e3a8a">Cold winter = high heating demand. Hot summer = high AC demand. Mild spring = low demand. A straight line would predict demand keeps rising with temperature — completely wrong!</p>
+    </div>
+    <div style="background:#f0fdf4;border-radius:10px;padding:14px;border-top:4px solid var(--a3)">
+      <div style="font-weight:800;color:var(--a3);margin-bottom:7px;font-size:.88em">&#128640; STARTUP GROWTH (S-Curve)</div>
+      <div style="text-align:center;margin:10px 0">
+        <svg viewBox="0 0 140 90" style="width:100%;max-width:180px">
+          <line x1="10" y1="80" x2="130" y2="80" stroke="#cbd5e1" stroke-width="1.5"/>
+          <line x1="10" y1="80" x2="10" y2="10" stroke="#cbd5e1" stroke-width="1.5"/>
+          <text x="65" y="88" fill="#94a3b8" font-size="7" text-anchor="middle">Months</text>
+          <text x="3" y="45" fill="#94a3b8" font-size="7" text-anchor="middle" transform="rotate(-90,3,45)">Users</text>
+          <path d="M15 75 C30 73 40 50 70 25 S105 12 125 12" fill="none" stroke="#16a34a" stroke-width="2.5"/>
+          <text x="15" y="72" fill="#16a34a" font-size="6">Slow start</text>
+          <text x="55" y="22" fill="#16a34a" font-size="6">Viral growth</text>
+          <text x="100" y="10" fill="#16a34a" font-size="6">Plateau</text>
+        </svg>
+      </div>
+      <p style="font-size:.8em;line-height:1.65;color:#14532d">Startups grow slowly, then explosively (viral phase), then plateau (market saturation). Linear regression would predict steady growth and completely miss the viral explosion moment.</p>
+    </div>
+    <div style="background:#fef9c3;border-radius:10px;padding:14px;border-top:4px solid var(--gold)">
+      <div style="font-weight:800;color:#92400e;margin-bottom:7px;font-size:.88em">&#127868; PRICE vs DEMAND (Inverted-U)</div>
+      <div style="text-align:center;margin:10px 0">
+        <svg viewBox="0 0 140 90" style="width:100%;max-width:180px">
+          <line x1="10" y1="80" x2="130" y2="80" stroke="#cbd5e1" stroke-width="1.5"/>
+          <line x1="10" y1="80" x2="10" y2="10" stroke="#cbd5e1" stroke-width="1.5"/>
+          <text x="65" y="88" fill="#94a3b8" font-size="7" text-anchor="middle">Price</text>
+          <text x="3" y="45" fill="#94a3b8" font-size="7" text-anchor="middle" transform="rotate(-90,3,45)">Revenue</text>
+          <path d="M15 60 Q70 10 125 65" fill="none" stroke="#d97706" stroke-width="2.5"/>
+          <text x="20" y="58" fill="#d97706" font-size="6">Too cheap</text>
+          <circle cx="70" cy="12" r="3" fill="#ef4444"/>
+          <text x="55" y="10" fill="#ef4444" font-size="6">Sweet spot!</text>
+          <text x="98" y="63" fill="#d97706" font-size="6">Too expensive</text>
+        </svg>
+      </div>
+      <p style="font-size:.8em;line-height:1.65;color:#78350f">Very low price = low revenue (selling cheap). Sweet spot = max revenue. Too high price = demand collapses. Classic inverted-U. Linear model can't find the profit-maximising price.</p>
+    </div>
+  </div>
+</div>
+
+<div class="dark">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.7em;margin-bottom:12px">POLYNOMIAL REGRESSION — THE FORMULA DECODED FOR EVERYONE</div>
+  <div class="g2">
+    <div>
+      <div style="margin-bottom:12px">
+        <div style="font-family:var(--mono);color:#94a3b8;font-size:.7em;margin-bottom:5px">DEGREE 1 (straight line)</div>
+        <div class="formula">y = b + w₁x</div>
+        <div style="font-size:.8em;color:#c7d2fe;margin-top:5px">Only goes straight. Cannot fit any curve.</div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-family:var(--mono);color:#94a3b8;font-size:.7em;margin-bottom:5px">DEGREE 2 (one curve — U or inverted-U)</div>
+        <div class="formula">y = b + w₁x + w₂x²</div>
+        <div style="font-size:.8em;color:#c7d2fe;margin-top:5px">One bend. Fits U-shapes, peaks, troughs. <strong>Usually the sweet spot.</strong></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-family:var(--mono);color:#94a3b8;font-size:.7em;margin-bottom:5px">DEGREE 3 (S-curve)</div>
+        <div class="formula">y = b + w₁x + w₂x² + w₃x³</div>
+        <div style="font-size:.8em;color:#c7d2fe;margin-top:5px">Two bends. Fits S-curves, startup growth. Use with caution.</div>
+      </div>
+    </div>
+    <div>
+      <div style="background:#1a1a1a;border-radius:10px;padding:14px;height:100%;border:1px solid #333">
+        <div style="font-family:var(--mono);color:var(--gold);font-size:.73em;margin-bottom:10px">&#128290; WORKED EXAMPLE: Zomato Discount vs Orders</div>
+        <div style="font-size:.83em;color:#e2e8f0;line-height:2">
+          Data from 6 months of Zomato campaigns:<br>
+          <span style="color:#7dd3fc">10% off → 1,200 orders</span><br>
+          <span style="color:#7dd3fc">20% off → 2,800 orders</span><br>
+          <span style="color:#7dd3fc">30% off → 4,100 orders (peak!)</span><br>
+          <span style="color:#7dd3fc">40% off → 3,900 orders (plateau)</span><br>
+          <span style="color:#7dd3fc">50% off → 3,200 orders (declining!)</span><br><br>
+          Degree-2 model: <strong style="color:var(--gold)">Orders = -3.2×disc² + 198×disc - 800</strong><br>
+          Optimal discount = 198/(2×3.2) = <strong style="color:#86efac">30.9%</strong> &#8594; max orders!
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="warn" style="margin-top:12px;background:rgba(217,119,6,.12);border-color:var(--gold)">
+    <strong style="color:var(--gold)">&#9888;&#65039; The Golden Rule:</strong> <span style="color:#e2e8f0">Never go above Degree 3 unless you have very strong domain knowledge. Degree 7, 8, 9 = model memorises noise and goes haywire on new data. Always validate on test data and watch test R² alongside training R².</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:1em;font-weight:800;margin-bottom:12px">&#127918; Spot the Curve — Interactive Challenge!</h3>
+  <p style="font-size:.86em;color:#555;margin-bottom:14px">For each business scenario below, identify whether a <strong>straight line (Degree 1)</strong> or a <strong>curve (Degree 2+)</strong> is the right approach. You'll see the data pattern — make your call!</p>
+  <div id="poly-game-container">
+    <div id="pg-scenario" style="background:#f8f8f8;border-radius:10px;padding:14px;margin-bottom:12px;border:2px solid var(--border)"></div>
+    <div id="pg-opts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"></div>
+    <div id="pg-fb" style="font-size:.84em;line-height:1.7;padding:10px;border-radius:8px;display:none;margin-bottom:8px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span id="pg-prog" style="font-family:var(--mono);font-size:.75em;color:var(--muted)">Scenario 1 of 5</span>
+      <button class="btn" style="font-size:.78em;padding:6px 14px" id="pg-next" onclick="pgNext()" style="display:none">Next Scenario &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('poly-acc')">
+    <div class="acc-left"><div class="acc-ico">&#129504;</div><div><div class="acc-title">Boss Question: Find the Optimal Price (+20 XP)</div><div class="acc-sub">Use polynomial logic to solve a real Flipkart pricing problem</div></div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+20 XP</span><span class="acc-arr" id="poly-acc-arr">&#9660;</span></div>
+  </div>
+  <div class="acc-body" id="poly-acc-body">
+    <div class="hbox hbox-blue" style="margin-bottom:12px">
+      <h4>&#128203; The Scenario</h4>
+      <p style="font-size:.84em;line-height:1.75">Flipkart ran a product pricing experiment. Here's what they found:<br><br>
+      Price ₹199 → Revenue ₹9,950/day (50 units × ₹199)<br>
+      Price ₹299 → Revenue ₹20,930/day (70 units × ₹299)<br>
+      Price ₹499 → Revenue ₹34,930/day (70 units × ₹499)<br>
+      Price ₹699 → Revenue ₹32,053/day (45.8 units × ₹699)<br>
+      Price ₹999 → Revenue ₹19,980/day (20 units × ₹999)<br><br>
+      A polynomial degree-2 model predicts Revenue = -0.08×Price² + 100×Price - 5,000</p>
+    </div>
+    <div class="qprompt">Using the degree-2 formula, what is the revenue-maximising price? (Hint: peak of a parabola = -b/2a)</div>
+    <div class="qopt" onclick="cq('poly-boss',this,false)"><div class="qm">A</div>₹399 — middle of the price range tested</div>
+    <div class="qopt" onclick="cq('poly-boss',this,false)"><div class="qm">B</div>₹499 — highest revenue seen in the data</div>
+    <div class="qopt" onclick="cq('poly-boss',this,true)"><div class="qm">C</div>₹625 — optimal price = -100 / (2 × -0.08) = 100/0.16 = ₹625. This is outside the tested range but the polynomial extrapolates to the true peak. The model predicts maximum revenue at this price.</div>
+    <div class="qopt" onclick="cq('poly-boss',this,false)"><div class="qm">D</div>₹999 — higher price always means more revenue per unit</div>
+    <div class="qfb" id="poly-boss-fb"></div>
+  </div>
+</div>
+
+</div>
+<div class="sp" id="sp-compare">
+<table class="ctbl">
+  <thead><tr><th>Algorithm</th><th>Regressor?</th><th>Classifier?</th><th>Best When</th><th>Indian Use Case (Reg)</th><th>Indian Use Case (Class)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Linear Reg</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:#aaa">&#10060; No</td><td>Linear relationships, interpretable coefficients needed</td><td>Magicbricks property valuation</td><td>—</td></tr>
+    <tr><td><strong>Ridge / Lasso</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:#aaa">&#10060; No</td><td>Many features, prevent overfitting</td><td>CIBIL loan amount</td><td>—</td></tr>
+    <tr><td><strong>Polynomial</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:#aaa">&#10060; No</td><td>U-shaped or curved relationships</td><td>DISCOMS electricity demand</td><td>—</td></tr>
+    <tr><td><strong>SVR</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:var(--a3)">&#9989; SVC</td><td>Outlier-heavy data, non-linear patterns</td><td>BSE stock price prediction</td><td>Spam vs ham email detection</td></tr>
+    <tr><td><strong>Decision Tree</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:var(--a3)">&#9989; Yes</td><td>Auditability required, explainability critical</td><td>IRDAI premium amount</td><td>IRDAI approve/reject claim</td></tr>
+    <tr><td><strong>Random Forest</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:var(--a3)">&#9989; Yes</td><td>Strong accuracy without tuning, feature importance needed</td><td>IMD monsoon rainfall (mm)</td><td>PhonePe fraud YES/NO</td></tr>
+    <tr><td><strong>XGBoost</strong></td><td style="color:var(--a3)">&#9989; Yes</td><td style="color:var(--a3)">&#9989; Yes</td><td>Max accuracy on tabular data</td><td>IPL auction salary (₹L)</td><td>Customer churn YES/NO</td></tr>
+  </tbody>
+</table>
+<div class="info" style="margin-top:10px">&#128161; <strong>Key insight for BBA/BCom:</strong> Decision Tree, Random Forest, and XGBoost are <em>Swiss Army knives</em> — one algorithm, two uses. The business question determines the mode. "How much?" = Regressor. "Will it?" = Classifier. The mathematics underneath is identical — only the final step (average vs majority vote) changes.</div>
+<div class="acc">
+  <div class="acc-h" onclick="tog('algo-game')">
+    <div class="acc-left"><div class="acc-ico">&#127918;</div><div><div class="acc-title">Algorithm Matching Game (+25 XP)</div><div class="acc-sub">4 real business scenarios &mdash; pick the right algorithm for each</div></div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+25 XP</span><span class="acc-arr" id="algo-game-arr">&#9660;</span></div>
+  </div>
+  <div class="acc-body" id="algo-game-body">
+    <div id="ag-q" style="margin-bottom:14px"></div>
+    <div id="ag-opts" style="display:grid;grid-template-columns:1fr 1fr;gap:7px"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <span id="ag-score" style="font-family:var(--mono);font-size:.8em;color:var(--muted)">Question 1 of 4</span>
+      <button class="btn" style="font-size:.78em;padding:6px 14px" id="ag-next" onclick="agNext()" style="display:none">Next &rarr;</button>
+    </div>
+    <div id="ag-fb" style="margin-top:8px;font-size:.84em;line-height:1.7;padding:9px;border-radius:7px;display:none"></div>
+  </div>
+</div>
+</div>
+
+<div class="nb">
+  <button class="btn ghost" onclick="showMod(2)">&larr; L1, L2 &amp; Elastic Net</button>
+  <button class="btn" onclick="showMod(4)">&#9316; Bias &amp; Variance &rarr;</button>
+</div>
+</div>
+
+<div class="mod" id="mod4">
+<div class="stitle">Bias, Variance &amp; Overfitting</div>
+<div class="ssub">The most important concept in all of machine learning. Get this right and you will never deploy a broken model again.</div>
+
+<div class="card">
+  <div style="font-size:1.3em;font-weight:800;margin-bottom:14px">&#127919; The Archer Analogy &mdash; The Clearest Way to Understand This</div>
+  <div class="g2" style="margin-bottom:14px">
+    <div>
+      <div style="background:#fef2f2;border:2px solid #fecaca;border-radius:12px;padding:15px;margin-bottom:10px">
+        <div style="font-weight:800;color:var(--a1);margin-bottom:8px">&#128680; HIGH BIAS (Underfitting)</div>
+        <div style="text-align:center;margin:10px 0">
+          <svg viewBox="0 0 120 120" style="width:100%;max-width:140px">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#fecaca" stroke-width="2"/>
+            <circle cx="60" cy="60" r="35" fill="none" stroke="#fca5a5" stroke-width="2"/>
+            <circle cx="60" cy="60" r="20" fill="none" stroke="#f87171" stroke-width="2"/>
+            <circle cx="60" cy="60" r="8" fill="#ef4444"/>
+            <circle cx="18" cy="20" r="4" fill="#1d4ed8"/>
+            <circle cx="22" cy="28" r="4" fill="#1d4ed8"/>
+            <circle cx="12" cy="24" r="4" fill="#1d4ed8"/>
+            <circle cx="20" cy="15" r="4" fill="#1d4ed8"/>
+            <circle cx="15" cy="32" r="4" fill="#1d4ed8"/>
+          </svg>
+        </div>
+        <p style="font-size:.82em;line-height:1.7;color:#7f1d1d">Arrows cluster TOGETHER (low variance) but all miss the bullseye by the same amount (high bias). The archer has a systematic flaw in technique.<br><br><strong>ML equivalent:</strong> Model is too simple. Consistently wrong in the same direction on ALL data.</p>
+      </div>
+      <div style="background:#fef2f2;border:2px solid #fecaca;border-radius:12px;padding:15px">
+        <div style="font-weight:800;color:#dc2626;margin-bottom:8px">&#128680; HIGH VARIANCE (Overfitting)</div>
+        <div style="text-align:center;margin:10px 0">
+          <svg viewBox="0 0 120 120" style="width:100%;max-width:140px">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#fecaca" stroke-width="2"/>
+            <circle cx="60" cy="60" r="35" fill="none" stroke="#fca5a5" stroke-width="2"/>
+            <circle cx="60" cy="60" r="20" fill="none" stroke="#f87171" stroke-width="2"/>
+            <circle cx="60" cy="60" r="8" fill="#ef4444"/>
+            <circle cx="30" cy="90" r="4" fill="#1d4ed8"/>
+            <circle cx="95" cy="25" r="4" fill="#1d4ed8"/>
+            <circle cx="15" cy="50" r="4" fill="#1d4ed8"/>
+            <circle cx="80" cy="100" r="4" fill="#1d4ed8"/>
+            <circle cx="100" cy="70" r="4" fill="#1d4ed8"/>
+          </svg>
+        </div>
+        <p style="font-size:.82em;line-height:1.7;color:#7f1d1d">Arrows scattered EVERYWHERE (high variance). On average they might hit the bullseye, but individually each one misses.<br><br><strong>ML equivalent:</strong> Model memorised training data (noise included). Works perfectly on training, fails on new data.</p>
+      </div>
+    </div>
+    <div>
+      <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:12px;padding:15px;margin-bottom:10px">
+        <div style="font-weight:800;color:var(--a3);margin-bottom:8px">&#9989; IDEAL: Low Bias + Low Variance</div>
+        <div style="text-align:center;margin:10px 0">
+          <svg viewBox="0 0 120 120" style="width:100%;max-width:140px">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#bbf7d0" stroke-width="2"/>
+            <circle cx="60" cy="60" r="35" fill="none" stroke="#86efac" stroke-width="2"/>
+            <circle cx="60" cy="60" r="20" fill="none" stroke="#4ade80" stroke-width="2"/>
+            <circle cx="60" cy="60" r="8" fill="#16a34a"/>
+            <circle cx="58" cy="57" r="4" fill="#1d4ed8"/>
+            <circle cx="63" cy="62" r="4" fill="#1d4ed8"/>
+            <circle cx="57" cy="63" r="4" fill="#1d4ed8"/>
+            <circle cx="62" cy="57" r="4" fill="#1d4ed8"/>
+            <circle cx="60" cy="55" r="4" fill="#1d4ed8"/>
+          </svg>
+        </div>
+        <p style="font-size:.82em;line-height:1.7;color:#14532d">Arrows cluster tightly ON the bullseye. Low bias (hitting right spot) + low variance (consistent). This is what we aim for.<br><br><strong>ML equivalent:</strong> Generalises well to new data. Consistent performance.</p>
+      </div>
+      <div class="hbox hbox-purple" style="margin-bottom:0">
+        <h4>&#9878;&#65039; The Tradeoff</h4>
+        <p style="font-size:.82em;line-height:1.7">Making a model more complex reduces bias but increases variance. Making it simpler reduces variance but increases bias. The art of ML is finding the <strong>sweet spot</strong> in between.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="div"><span>bias &amp; variance &mdash; in plain english with real examples</span></div>
+
+<div class="grad-card">
+  <div style="font-family:var(--mono);font-size:.63em;color:#a5b4fc;text-transform:uppercase;letter-spacing:.12em;margin-bottom:9px">&#128218; Theory &mdash; Total Prediction Error</div>
+  <h3>Total Error = Bias&sup2; + Variance + Irreducible Noise</h3>
+  <p>Every model&apos;s error has three components. The first two we can control. The third we cannot.</p>
+  <div class="gbullets">
+    <div class="gb"><strong>Bias (Underfitting)</strong>"My model predicts flat prices &#8377;8L too high for ALL flats." Systematic error. The model is too simple &mdash; a straight line trying to fit a curved relationship. High bias = the model has wrong assumptions about the world. Fix: use a more complex model or add features.</div>
+    <div class="gb"><strong>Variance (Overfitting)</strong>"Retrained on slightly different data and predictions completely changed." The model is too sensitive to training data fluctuations. It memorised noise. High variance = the model is too complex for the amount of data. Fix: regularisation, more data, simpler model.</div>
+    <div class="gb"><strong>Irreducible Noise</strong>Even a perfect model can&apos;t predict a flat&apos;s final price exactly because buyers negotiate, emotions influence prices, and random market events occur. Some error is INHERENT in the problem. No amount of ML can eliminate it.</div>
+    <div class="gb"><strong>The Sweet Spot</strong>We want a model complex enough to capture real patterns (low bias) but not so complex it memorises noise (low variance). Cross-validation helps find this. Regularisation (L1/L2) directly controls this tradeoff.</div>
+  </div>
+</div>
+
+<div class="div"><span>&#127918; live overfitting detector &mdash; watch it happen in real time</span></div>
+<div class="ibox">
+  <h4>&#127918; Polynomial Degree Explorer <span class="itag">LIVE</span></h4>
+  <p style="font-size:.84em;color:#555;margin-bottom:14px">Blue dots = training data. Red triangles = test data the model has NEVER seen. Increase polynomial degree. Watch Train R&sup2; go to 1.0 (perfect!) while Test R&sup2; collapses. <strong>This is overfitting happening live before your eyes.</strong></p>
+  <div class="g2">
+    <div>
+      <div class="slrow"><div class="sllbl"><span>Polynomial Degree</span><span class="slval" id="sv-deg">1</span></div><input type="range" min="1" max="9" value="1" step="1" id="sl-deg" oninput="updatePoly()"></div>
+      <div class="escale">
+        <div class="escale-item"><span class="ei">&#128225;</span><div class="el">Degree 1<br>Straight line</div></div>
+        <div class="escale-item"><span class="ei">&#128218;</span><div class="el">Degree 2-3<br>Sweet spot</div></div>
+        <div class="escale-item"><span class="ei">&#128308;</span><div class="el">Degree 7+<br>Memorising!</div></div>
+        <div class="escale-item"><span class="ei">&#128165;</span><div class="el">Degree 9<br>Disaster!</div></div>
+      </div>
+      <div style="background:#111;border-radius:9px;padding:12px;margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px">
+          <div style="background:#1a1a1a;border-radius:7px;padding:8px;text-align:center">
+            <div style="font-family:var(--mono);font-size:1.15em;font-weight:700;color:#86efac" id="p-trainr2">--</div>
+            <div style="font-size:.64em;color:#888;margin-top:2px">Train R&sup2; (&#9679;)</div>
+          </div>
+          <div style="background:#1a1a1a;border-radius:7px;padding:8px;text-align:center">
+            <div style="font-family:var(--mono);font-size:1.15em;font-weight:700;color:#fca5a5" id="p-testr2">--</div>
+            <div style="font-size:.64em;color:#888;margin-top:2px">Test R&sup2; (&#9650;)</div>
+          </div>
+        </div>
+        <div id="poly-verdict" style="font-size:.79em;padding:7px;background:#1e293b;border-radius:6px;color:#94a3b8;line-height:1.5"></div>
+      </div>
+    </div>
+    <div class="cbox"><canvas id="cv-poly" height="250"></canvas></div>
+  </div>
+</div>
+
+<div class="div"><span>how to detect &amp; fix overfitting</span></div>
+
+<div class="card">
+  <h3 style="font-size:1.05em;font-weight:800;margin-bottom:14px">&#128269; The 5 Red Flags</h3>
+  <div style="display:grid;gap:9px">
+    <div style="background:#fef2f2;border-radius:9px;padding:12px;border-left:4px solid var(--a1)">
+      <div style="font-weight:800;color:#991b1b;margin-bottom:5px">&#128680; Flag 1: Huge Train/Test Gap</div>
+      <div style="font-size:.84em;line-height:1.7">Train R&sup2;=0.97, Test R&sup2;=0.51 &rarr; severe overfitting. Model explains 97% of training variance but only 51% of real-world variance. <strong>Rule: if gap &gt; 0.1, investigate.</strong></div>
+    </div>
+    <div style="background:#fff7ed;border-radius:9px;padding:12px;border-left:4px solid var(--gold)">
+      <div style="font-weight:800;color:#92400e;margin-bottom:5px">&#9888;&#65039; Flag 2: Wild Coefficient Values</div>
+      <div style="font-size:.84em;line-height:1.7">Linear regression coefficients w&#8327;=+8,47,320 and w&#8328;=&minus;8,39,115 almost cancelling out. These are correlated features fighting each other. Use Ridge to calm them down.</div>
+    </div>
+    <div style="background:#fef2f2;border-radius:9px;padding:12px;border-left:4px solid #991b1b">
+      <div style="font-weight:800;color:#991b1b;margin-bottom:5px">&#128680; Flag 3: Perfect Training Accuracy</div>
+      <div style="font-size:.84em;line-height:1.7">Train accuracy = 99.8%? Suspicious. Real-world data has noise. If model is perfect on training, it memorised the noise. Check test accuracy before celebrating.</div>
+    </div>
+    <div style="background:#f0fdf4;border-radius:9px;padding:12px;border-left:4px solid var(--a3)">
+      <div style="font-weight:800;color:#166534;margin-bottom:5px">&#9989; Healthy Model Look</div>
+      <div style="font-size:.84em;line-height:1.7">Train R&sup2;=0.87, Test R&sup2;=0.84 &rarr; only 3% gap. Consistent errors across train and test. Model learned genuine patterns, not noise. <strong>This is what you want.</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="div"><span>cross-validation &mdash; the honest evaluation method</span></div>
+<div class="dark">
+  <div style="font-family:var(--mono);color:var(--gold);font-size:.7em;margin-bottom:12px">5-FOLD CROSS VALIDATION &mdash; HOW TO GET AN HONEST MODEL SCORE</div>
+  <div style="background:#111;border-radius:10px;padding:15px;margin-bottom:12px">
+    <div style="font-family:var(--mono);font-size:.7em;color:#94a3b8;margin-bottom:10px">1000 MUMBAI FLAT SALES SPLIT INTO 5 EQUAL BLOCKS</div>
+    <div style="display:grid;gap:5px;font-family:var(--mono);font-size:.69em;text-align:center">
+      <div style="display:grid;grid-template-columns:55px repeat(5,1fr);gap:3px">
+        <div style="color:#64748b;padding:4px">Run</div>
+        <div style="background:#1e3a5f;border-radius:4px;padding:5px;color:#7dd3fc">200 Flats</div>
+        <div style="background:#1e3a5f;border-radius:4px;padding:5px;color:#7dd3fc">200 Flats</div>
+        <div style="background:#1e3a5f;border-radius:4px;padding:5px;color:#7dd3fc">200 Flats</div>
+        <div style="background:#1e3a5f;border-radius:4px;padding:5px;color:#7dd3fc">200 Flats</div>
+        <div style="background:#1e3a5f;border-radius:4px;padding:5px;color:#7dd3fc">200 Flats</div>
+      </div>
+      <div style="display:grid;grid-template-columns:55px repeat(5,1fr);gap:3px">
+        <div style="color:#94a3b8;padding:4px">Run 1</div>
+        <div style="background:#dc2626;border-radius:4px;padding:4px;color:#fff">TEST</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+      </div>
+      <div style="display:grid;grid-template-columns:55px repeat(5,1fr);gap:3px">
+        <div style="color:#94a3b8;padding:4px">Run 2</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+        <div style="background:#dc2626;border-radius:4px;padding:4px;color:#fff">TEST</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+        <div style="background:#166534;border-radius:4px;padding:4px;color:#fff">TRAIN</div>
+      </div>
+      <div style="display:grid;grid-template-columns:55px repeat(5,1fr);gap:3px">
+        <div style="color:#94a3b8;padding:4px">Runs 3-5</div>
+        <div style="grid-column:2/7;color:#475569;padding:4px">...pattern continues, each block tested exactly once...</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:9px;background:#1e293b;border-radius:7px;font-family:var(--mono);font-size:.72em;color:#94a3b8">
+      Fold 1: R&sup2;=0.84 &nbsp;|&nbsp; Fold 2: R&sup2;=0.87 &nbsp;|&nbsp; Fold 3: R&sup2;=0.82 &nbsp;|&nbsp; Fold 4: R&sup2;=0.85 &nbsp;|&nbsp; Fold 5: R&sup2;=0.86<br>
+      <strong style="color:#7dd3fc">Mean CV R&sup2; = 0.848 &plusmn; 0.018 &mdash; this is the honest performance you report.</strong>
+    </div>
+  </div>
+  <div class="info" style="background:rgba(37,99,235,.12);border-color:#3b82f6">
+    <strong style="color:#7dd3fc">&#128161; Why CV matters:</strong> <span style="color:#e2e8f0">A single 80/20 train-test split is like one exam. You might get lucky or unlucky. CV gives you 5 different exams and averages the results. It&apos;s statistically honest. <strong>Always report CV score, never just training score.</strong></span>
+  </div>
+</div>
+
+<div class="div"><span>interactive quiz game &mdash; diagnose these models!</span></div>
+<div class="acc">
+  <div class="acc-h" onclick="tog('diag-game')">
+    <div class="acc-left"><div class="acc-ico">&#128269;</div><div><div class="acc-title">Model Diagnosis Game (+30 XP)</div><div class="acc-sub">Read the metrics, diagnose overfit/underfit, prescribe the fix</div></div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+30 XP</span><span class="acc-arr" id="diag-game-arr">&#9660;</span></div>
+  </div>
+  <div class="acc-body" id="diag-game-body">
+    <div id="dg-case" style="background:#fff;border:2px solid var(--border);border-radius:10px;padding:15px;margin-bottom:12px"></div>
+    <div id="dg-opts" style="display:grid;grid-template-columns:1fr 1fr;gap:7px"></div>
+    <div id="dg-fb" style="margin-top:9px;font-size:.84em;line-height:1.7;padding:9px;border-radius:7px;display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <span id="dg-prog" style="font-family:var(--mono);font-size:.78em;color:var(--muted)">Case 1 of 4</span>
+      <button class="btn" style="font-size:.78em;padding:6px 14px" id="dg-next" onclick="dgNext()">Next Case &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<div class="qblock">
+  <h4>&#9989; Bias-Variance Final Check (+25 XP)</h4>
+  <div class="qprompt">Swiggy&apos;s delivery model: Training MAE = 1.2 min (excellent!). Production MAE = 11.8 min (terrible!). The team says "production data is different, nothing we can do." The CTO disagrees. Who is right and what should be done?</div>
+  <div class="qopt" onclick="cq('q4a',this,false)"><div class="qm">A</div>Team is right &mdash; data drift happens, just retrain periodically</div>
+  <div class="qopt" onclick="cq('q4a',this,true)"><div class="qm">B</div>CTO is right &mdash; 10&times; gap (1.2 vs 11.8 min) is severe overfitting, not data drift. The model memorised training patterns. Fix: add regularisation, use cross-validation, validate on data from a DIFFERENT time period before deployment.</div>
+  <div class="qopt" onclick="cq('q4a',this,false)"><div class="qm">C</div>The metric is wrong &mdash; switch from MAE to RMSE</div>
+  <div class="qfb" id="q4a-fb"></div>
+</div>
+
+<div class="nb">
+  <button class="btn ghost" onclick="showMod(3)">&larr; Advanced Algorithms</button>
+  <button class="btn grn" onclick="showMod(5)">&#127942; Boss Challenge &rarr;</button>
+</div>
+</div>
+
+<div class="mod" id="mod5">
+<div class="stitle">&#127942; Boss Challenge</div>
+<div class="ssub">Four legendary challenges. 30 XP each. Earn the Regression Champion badge!</div>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('b1')"><div class="acc-left"><div class="acc-ico">&#127968;</div><div><div class="acc-title">Boss 1: NoBroker Mumbai Pricing Engine</div><div class="acc-sub">80 features, correlated clusters, seller explainability needed</div></div></div><div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+30 XP</span><span class="acc-arr" id="b1-arr">&#9660;</span></div></div>
+  <div class="acc-body" id="b1-body">
+    <div class="hbox hbox-blue" style="margin-bottom:12px"><h4>&#128203; The Scenario</h4><p style="font-size:.84em;line-height:1.7">NoBroker has 50,000 Mumbai transactions, 80 features. About 30 features are correlated (all "quality of life" metrics cluster together: school quality, noise level, air quality, green spaces). They need to explain to sellers: "Your flat is priced &#8377;8L lower because..."</p></div>
+    <div class="qopt" onclick="cq('b1q',this,false)"><div class="qm">A</div>Simple Linear Regression &mdash; most explainable</div>
+    <div class="qopt" onclick="cq('b1q',this,false)"><div class="qm">B</div>Lasso &mdash; selects the 10-15 most important features</div>
+    <div class="qopt" onclick="cq('b1q',this,true)"><div class="qm">C</div>Elastic Net + SHAP values: handles correlated features (unlike Lasso which arbitrarily drops one), keeps all 80, and SHAP explains: "Your flat is &#8377;8L lower because metro distance is 2.1km vs locality average 0.8km"</div>
+    <div class="qopt" onclick="cq('b1q',this,false)"><div class="qm">D</div>XGBoost &mdash; maximum accuracy, explain later</div>
+    <div class="qfb" id="b1q-fb"></div>
+  </div>
+</div>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('b2')"><div class="acc-left"><div class="acc-ico">&#128138;</div><div><div class="acc-title">Boss 2: AIIMS Cancer Dose Prediction</div><div class="acc-sub">15,000 genes, 800 patients, sparse scientific finding needed</div></div></div><div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+30 XP</span><span class="acc-arr" id="b2-arr">&#9660;</span></div></div>
+  <div class="acc-body" id="b2-body">
+    <div class="hbox hbox-gold" style="margin-bottom:12px"><h4>&#128203; The Scenario</h4><p style="font-size:.84em;line-height:1.7">15,000 genetic markers, 800 patients. Goal: predict optimal chemo dose (mg/day). Primary scientific deliverable: identify the 15-20 genes that determine dosage. Doctors need to know WHICH genes to test, not just accurate predictions.</p></div>
+    <div class="qopt" onclick="cq('b2q',this,false)"><div class="qm">A</div>SVR with RBF kernel &mdash; handles outlier patients and non-linearity</div>
+    <div class="qopt" onclick="cq('b2q',this,true)"><div class="qm">B</div>Lasso (L1): zeros out 14,980+ irrelevant genes, identifies 15-20 predictive biomarkers. The sparse solution IS the scientific finding. Random Forest gives feature importance rankings but not a clean zero/non-zero list that clinicians can act on.</div>
+    <div class="qopt" onclick="cq('b2q',this,false)"><div class="qm">C</div>Random Forest &mdash; handles high dimensions and gives feature importance</div>
+    <div class="qopt" onclick="cq('b2q',this,false)"><div class="qm">D</div>Multiple Linear Regression &mdash; interpretable coefficients for each gene</div>
+    <div class="qfb" id="b2q-fb"></div>
+  </div>
+</div>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('b3')"><div class="acc-left"><div class="acc-ico">&#9889;</div><div><div class="acc-title">Boss 3: Indian Railways Model Audit</div><div class="acc-sub">Read the metrics. Catch the lie. Save the project.</div></div></div><div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+30 XP</span><span class="acc-arr" id="b3-arr">&#9660;</span></div></div>
+  <div class="acc-body" id="b3-body">
+    <div class="hbox hbox-red" style="margin-bottom:12px">
+      <h4>&#128203; The Model Report Card</h4>
+      <div style="font-family:var(--mono);font-size:.8em;line-height:2;margin-top:8px">
+        Training R&sup2;: 0.96 &nbsp;|&nbsp; Training RMSE: 2.1 min<br>
+        Cross-Validation R&sup2;: 0.71 &nbsp;|&nbsp; CV RMSE: 14.3 min<br>
+        Team says: <strong>"Great model! R&sup2;=0.96 is outstanding."</strong><br>
+        CTO says: <strong>"I don&apos;t believe this model."</strong>
+      </div>
+    </div>
+    <div class="qprompt">Who is right, and what is actually happening?</div>
+    <div class="qopt" onclick="cq('b3q',this,false)"><div class="qm">A</div>Team is right &mdash; R&sup2;=0.96 is genuinely excellent, CV is always lower due to less data</div>
+    <div class="qopt" onclick="cq('b3q',this,true)"><div class="qm">B</div>CTO is right. The 0.25 R&sup2; drop (0.96&rarr;0.71) and 7&times; RMSE increase (2.1&rarr;14.3 min) prove severe overfitting. In production, passengers will experience 14-minute error margins, not 2. Always report CV score. Training score is not the model&apos;s real performance.</div>
+    <div class="qopt" onclick="cq('b3q',this,false)"><div class="qm">C</div>Both are right &mdash; the model works on familiar data which is acceptable</div>
+    <div class="qfb" id="b3q-fb"></div>
+  </div>
+</div>
+
+<div class="acc">
+  <div class="acc-h" onclick="tog('b4')"><div class="acc-left"><div class="acc-ico">&#127942;</div><div><div class="acc-title">Boss 4: The Grand Algorithm Selection Prix</div><div class="acc-sub">4 problems. Pick the perfect algorithm for each. No half-marks.</div></div></div><div style="display:flex;align-items:center;gap:9px"><span class="acc-pts">+30 XP</span><span class="acc-arr" id="b4-arr">&#9660;</span></div></div>
+  <div class="acc-body" id="b4-body">
+    <table class="ctbl" style="margin-bottom:14px">
+      <thead><tr><th>#</th><th>Problem</th><th>Key Constraint</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Predict Sensex closing value</td><td>Non-linear, market crash outliers, accuracy critical</td></tr>
+        <tr><td>2</td><td>Explain how 12 HR factors affect salary</td><td>HR must say "each year of experience adds &#8377;X"</td></tr>
+        <tr><td>3</td><td>Predict electricity demand from temperature + day type</td><td>Clear U-shaped curve: high demand in both peak summer AND peak winter</td></tr>
+        <tr><td>4</td><td>Win Kaggle house price competition (300+ engineered features)</td><td>Pure accuracy, no explainability needed</td></tr>
+      </tbody>
+    </table>
+    <div class="qopt" onclick="cq('b4q',this,true)"><div class="qm">A</div>1&rarr;SVR(RBF) handles crash outliers non-linearly | 2&rarr;Multiple Linear Regression gives interpretable coefficients | 3&rarr;Polynomial Regression captures U-shape | 4&rarr;XGBoost/LightGBM for max tabular accuracy</div>
+    <div class="qopt" onclick="cq('b4q',this,false)"><div class="qm">B</div>1&rarr;Linear Reg | 2&rarr;Ridge | 3&rarr;Decision Tree | 4&rarr;Random Forest</div>
+    <div class="qopt" onclick="cq('b4q',this,false)"><div class="qm">C</div>1&rarr;XGBoost | 2&rarr;Lasso | 3&rarr;Linear Reg | 4&rarr;SVR</div>
+    <div class="qopt" onclick="cq('b4q',this,false)"><div class="qm">D</div>Use Random Forest for all &mdash; most versatile</div>
+    <div class="qfb" id="b4q-fb"></div>
+  </div>
+</div>
+
+<div id="trophy-wrap" style="display:none">
+  <div class="trophy">
+    <div class="ti">&#127942;</div>
+    <h2>Regression Champion!</h2>
+    <span class="fscore" id="final-score"></span>
+    <p style="color:var(--muted);max-width:400px;margin:0 auto 16px;font-size:.93em;line-height:1.7">You&apos;ve mastered regression &mdash; from humble straight lines to XGBoost. You can predict any number that matters.</p>
+    <div class="tgrid" id="tgrid"></div>
+    <div style="display:flex;gap:9px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="showMod(0)">&#8617; Review All Modules</button>
+      <button class="btn grn" onclick="firework()">&#127881; Celebrate!</button>
+    </div>
+  </div>
+</div>
+
+<div id="final-btn-wrap" style="text-align:center;padding:22px">
+  <button class="btn gld" onclick="showFinal()">&#128202; See My Final Score &amp; Certificate</button>
+</div>
+
+<div class="nb">
+  <button class="btn ghost" onclick="showMod(4)">&larr; Bias &amp; Variance</button>
+  <div></div>
+</div>
+</div>
+</div><!-- end .pw -->
+
+<script>
+// ── GLOBALS ─────────────────────────────────────────────────────
+var totalXP=0, maxXP=500;
+var answered={};
+var charts={};
+var regType='ridge';
+
+var badges={b1:50,b2:120,b3:200,b4:290,b5:370,b6:440,b7:490};
+
+var feedbacks={
+  q0a:{ok:'Correct! Minutes of delay is a number that can be 0, 5, 43, or 120. Any continuous number output = Regression.',no:'Think about the output. Minutes (0, 5, 43, 120...) is a continuous number, not a fixed category. Continuous output = Regression.'},
+  q0b:{ok:'Correct! 73,458 points is a specific number on a continuous scale. Predicting a number = Regression.',no:'The output is a specific closing value (73,458 points). That is a number on a continuous scale = Regression. Predicting UP/DOWN would be Classification.'},
+  q1a:{ok:'Exactly right! Coefficients show the change in output per 1-unit change in that feature, holding all else constant. 2,400 units per 1% discount increase.',no:'Regression coefficients represent isolated effects holding other variables constant. 2,400 is the change in units sold for each 1% discount increase with brand, season, price unchanged.'},
+  bt1:{ok:'Correct! After controlling for performance stats, older players earn less. The coefficient answers: between two equally performing players, the younger one earns more. This is called controlling for confounders.',no:'Negative does NOT mean the raw relationship is negative. It means: after accounting for on-field performance, age has a negative effect. Two equally-performing players: the younger earns more.'},
+  q2a:{ok:'Excellent! Lasso performed automatic feature selection. Only 27 features genuinely predict loan amounts. The other 173 were noise causing overfitting. Sparse models generalise better.',no:'Lasso zeroing features IS the feature, not a bug. Only 27 of 200 features truly matter for loan prediction. The 173 zeroed features were noise causing the train=99% / test=51% gap.'},
+  q3a:{ok:'Correct! The 400 error is within the tube (epsilon=500) so it is completely ignored. Only the 2,500 error exceeds epsilon and becomes a support vector influencing the model.',no:'SVR only penalises errors OUTSIDE the epsilon tube. The 400 error is within the 500 tube = ignored. The 2,500 error exceeds 500 = becomes a support vector.'},
+  q3b:{ok:'Right! Decision Trees produce fully auditable IF-THEN rules. Regulators can trace every premium calculation. This is called white-box or glass-box modelling.',no:'Interpretability is the key constraint here. Decision Trees produce flowcharts that any officer can manually trace. XGBoost and Neural Networks are black boxes that cannot be audited by regulators.'},
+  q3c:{ok:'Correct! Feature importance is most actionable when it guides resource allocation. 34%+28%=62% of yield is explained by rainfall and temperature. Maximum budget impact comes from addressing these.',no:'Feature importance should guide resource allocation. Rainfall (34%) + Temperature (28%) = 62% of yield variation. This is where budget has maximum impact, not the 8% factor.'},
+  q3d:{ok:'Right! With 200 features, large training data, tabular structure, and accuracy as primary goal, XGBoost/LightGBM is the standard choice. SHAP values provide the explainability for policymakers.',no:'For maximum accuracy on tabular data with many features and sufficient data, Gradient Boosting (XGBoost/LightGBM) consistently wins. SHAP values explain individual predictions to non-technical audiences.'},
+  q4a:{ok:'CTO is absolutely right. A 10x gap (1.2 vs 11.8 min) is textbook severe overfitting. The model memorised training noise. Solution: regularisation, cross-validation across different time periods, and test on data from a completely different month before deployment.',no:'10x gap between training (1.2 min) and production (11.8 min) is severe overfitting, not data drift. Data drift causes gradual degradation over months. This immediate 10x gap means the model never generalised at all.'},
+  b1q:{ok:'Excellent! Elastic Net handles correlated features gracefully (unlike Lasso which arbitrarily drops one of two correlated features). SHAP values then provide natural-language explanations per prediction. Best of all worlds.',no:'With 30 correlated features and seller explainability needed, Elastic Net + SHAP is optimal. Lasso would arbitrarily zero out correlated features. XGBoost is more accurate but harder to explain to individual sellers.'},
+  b2q:{ok:'Brilliant! When the scientific goal is identifying WHICH features matter (not just accurate prediction), Lasso is perfect. Its zero/non-zero solution directly gives clinicians a testable gene panel. No other algorithm produces this sparse clinical deliverable.',no:'The deliverable is which genes to test, not just accurate predictions. Lasso\'s zero coefficients directly answer this. Random Forest gives importance rankings but not a clean actionable binary: test this gene / ignore that gene.'},
+  b3q:{ok:'CTO is 100% correct. Training score is NEVER the model\'s real performance. CV score is. A 7x RMSE jump from training to CV is severe overfitting. Passengers will experience 14-minute errors. The team was reporting a misleading metric.',no:'Training performance is not real performance. CV simulates production. A 7x RMSE increase (2.1 to 14.3 min) and 0.25 R-squared drop is severe overfitting. The team should always report CV scores to stakeholders.'},
+  b4q:{ok:'Perfect algorithm selection! SVR-RBF for crash outlier robustness. Multiple Linear Regression for interpretable HR coefficients. Polynomial for U-shaped temperature/demand relationship. XGBoost for competition-grade tabular accuracy. Each chosen for its specific architectural advantage.',no:'Correct matching: 1-SVR(RBF) for crash outliers, 2-Multiple Linear Regression for interpretable salary coefficients, 3-Polynomial Regression for U-shaped temperature curve, 4-XGBoost for max tabular accuracy.'},
+  'poly-boss':{ok:'Excellent! The peak of a degree-2 parabola y=ax\'\'+bx+c is at x=-b/2a. Here: -100/(2×-0.08) = 100/0.16 = Rs.625. This is the revenue-maximising price. Polynomial regression can find optimal points that raw data alone cannot reveal.',no:'The peak of parabola y=ax\'+bx+c is at x=-b/2a. Here: a=-0.08, b=100. Optimal price = -100/(2×-0.08) = Rs.625. The polynomial model predicts this mathematically even if Rs.625 was not tested in the experiment.'},
+  q3c:{ok:'Correct! Units sold is a continuous number (0, 847, 4382...). The RF Regressor averages 500 tree predictions to get the final number. A Classifier would only tell you whether demand is high or low.',no:'Units sold is a continuous number, not a category. RF Regressor aggregates by averaging (gives a number). RF Classifier aggregates by majority vote (gives a category like high/medium/low demand).'}
+};
+
+var xpMap={q0a:10,q0b:10,q1a:20,bt1:15,q2a:20,q3a:15,q3b:15,q3c:15,q3d:20,q4a:25,b1q:30,b2q:30,b3q:30,b4q:30,'poly-boss':20};
+
+// ── SCORE ────────────────────────────────────────────────────────
+function addXP(n){
+  totalXP+=n;
+  document.getElementById('sc-pts').textContent=totalXP;
+  document.getElementById('sc-bar').style.width=Math.min(100,totalXP/maxXP*100)+'%';
+  Object.keys(badges).forEach(function(id){
+    if(totalXP>=badges[id]) document.getElementById(id).classList.add('lit');
+  });
+  firework();
+}
+
+function cq(id,btn,correct){
+  if(answered[id]) return;
+  answered[id]=true;
+  var container=btn.parentElement;
+  var opts=container.querySelectorAll('.qopt');
+  opts.forEach(function(o){o.classList.add('dim');});
+  btn.classList.remove('dim');
+  var fb=document.getElementById(id+'-fb');
+  if(correct){
+    btn.classList.add('correct');
+    var xp=xpMap[id]||10;
+    if(fb){fb.className='qfb ok';fb.innerHTML='&#10003; '+(feedbacks[id]?feedbacks[id].ok:'Correct!')+'<strong> +'+xp+' XP!</strong>';}
+    addXP(xp);
+  } else {
+    btn.classList.add('wrong');
+    if(fb){fb.className='qfb no';fb.innerHTML='&#10007; '+(feedbacks[id]?feedbacks[id].no:'Not quite.');}
+  }
+}
+
+// ── MODULE NAVIGATION ────────────────────────────────────────────
+function showMod(idx){
+  var mods=document.querySelectorAll('.mod');
+  var tabs=document.querySelectorAll('.mt');
+  for(var i=0;i<6;i++){
+    var m=document.getElementById('mod'+i);
+    if(m) m.classList.toggle('on',i===idx);
+    if(tabs[i]) tabs[i].classList.toggle('on',i===idx);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+  try{
+    if(idx===1) setTimeout(initLine,200);
+    if(idx===2) setTimeout(function(){initReg();updateReg();},200);
+    if(idx===4) setTimeout(initPoly,200);
+  }catch(e){}
+}
+
+// ── ACCORDION ────────────────────────────────────────────────────
+function tog(id){
+  var body=document.getElementById(id+'-body');
+  var arr=document.getElementById(id+'-arr');
+  if(!body) return;
+  var open=body.classList.contains('open');
+  body.classList.toggle('open',!open);
+  if(arr) arr.classList.toggle('open',!open);
+}
+
+// ── SUB-TABS ────────────────────────────────────────────────────
+function showST(id,btn){
+  document.querySelectorAll('.st').forEach(function(t){t.classList.remove('on');});
+  document.querySelectorAll('.sp').forEach(function(p){p.classList.remove('on');});
+  btn.classList.add('on');
+  var el=document.getElementById('sp-'+id);
+  if(el) el.classList.add('on');
+}
+
+// ── ALGO CARDS ───────────────────────────────────────────────────
+var algoData={
+  slr:{title:'Simple Linear Regression',color:'#2563eb',formula:'y = mx + b',desc:'Finds the single straight line minimising sum of squared errors. One input feature, one output. The foundation of all regression.',pros:'Fully interpretable | Instant to train | Confidence intervals free | Zero hyperparameters',cons:'One feature only | Cannot fit curves | Sensitive to outliers | Fails with multicollinearity',use:'HDFC Bank: first-pass loan amount estimate from annual income alone.',when:'Quick baseline, single-feature problems, roughly linear data, small datasets'},
+  mlr:{title:'Multiple Linear Regression',color:'#2563eb',formula:'y = w1x1 + w2x2 + ... + wn*xn + b',desc:'Extends to many features simultaneously. Each coefficient is the effect of one feature while all others are held constant (ceteris paribus). Workhorse of business analytics.',pros:'Interpretable coefficients | Statistical significance tests | Fast training | Handles many features',cons:'Assumes linearity | Multicollinearity causes wild coefficients | Sensitive to outliers',use:'Magicbricks: predict flat price using size, floor, age, metro distance, BHK count.',when:'Many features with roughly linear relationships, interpretability required, B-school case studies'},
+  poly:{title:'Polynomial Regression',color:'#7c3aed',formula:'y = a0 + a1*x + a2*x^2 + a3*x^3',desc:'Adds squared, cubed terms to capture curves. Still uses OLS internally. Great for U-shapes and growth curves.',pros:'Captures curves | Uses same OLS solution | Still interpretable polynomial terms',cons:'Overfits BADLY at high degrees | Extrapolates wildly outside training range',use:'DISCOMS electricity: U-shaped demand vs temperature (peaks in summer AC season AND winter heating season).',when:'Clear non-linear curve visible in plots. Use degree 2 or 3 maximum. Polynomial degree 7+ = disaster.'},
+  ridge:{title:'Ridge Regression (L2)',color:'#0d9488',formula:'Cost = MSE + lambda * sum(w_i^2)',desc:'Adds L2 penalty. Shrinks ALL coefficients toward zero but never exactly to zero. Handles correlated features by spreading weight across them.',pros:'Handles multicollinearity | Prevents overfitting | Keeps all features | Stable coefficients',cons:'No feature selection | Still linear | Requires feature scaling',use:'CIBIL: 50+ correlated financial features (income, EMI, credit spend) all get moderate, stable weights.',when:'Many features, multicollinearity present, all features domain-relevant, financial/economic data'},
+  lasso:{title:'Lasso Regression (L1)',color:'#16a34a',formula:'Cost = MSE + lambda * sum(|w_i|)',desc:'Adds L1 penalty. Geometric property of absolute value creates exact zeros. Automatic feature selection built-in.',pros:'Automatic feature selection | Sparse interpretable models | Works with features >> samples',cons:'Randomly picks one of correlated feature pair | Unstable with high correlation',use:'AIIMS: 20,000 genes -> Lasso identifies 150 predictive biomarkers, zeros out 19,850.',when:'High-dimensional data (features >> samples), most features irrelevant, need to know WHICH features matter'},
+  enet:{title:'Elastic Net',color:'#d97706',formula:'Cost = MSE + alpha*L1 + (1-alpha)*L2',desc:'Combines L1 and L2 with mixing parameter alpha. Gets selection from L1 and stability from L2. Best general-purpose regulariser.',pros:'Handles correlated features AND does selection | Stable grouping effect | Flexible mixing',cons:'Two hyperparameters (lambda + alpha) | Slower cross-validation',use:'Swiggy: 200 features with many correlated (traffic, time of day, weather). Keeps meaningful groups, drops noise.',when:'High-dimensional data with correlated features, unsure between Ridge and Lasso, use as safe default'},
+  svr:{title:'Support Vector Regression',color:'#e84c3d',formula:'Fit epsilon-tube. Penalise only outside-tube errors.',desc:'Defines acceptable error margin epsilon. Points inside the tube: zero penalty. Points outside: become support vectors. Kernels enable non-linear fitting.',pros:'Robust to outliers | Non-linear via kernels | Good with small datasets | Excellent generalisation',cons:'Slow on large data (O(n^3)) | Hard to tune (epsilon, C, kernel, gamma) | Not interpretable',use:'BSE stock prices: 2008 crash and COVID drop are outliers that do not dominate the model.',when:'Outlier-heavy data, small-medium dataset (<50k rows), non-linear relationships, robustness over speed'},
+  dtr:{title:'Decision Tree Regression',color:'#8b5cf6',formula:'Recursively split on best feature. Predict leaf average.',desc:'Partitions feature space into rectangular regions via IF-THEN rules. Predicts average in each region. Fully transparent.',pros:'Fully auditable flowchart | No feature scaling | Handles non-linear interactions | Mixed data types',cons:'Overfits badly with deep trees | Unstable (small data change = very different tree)',use:'IRDAI insurance premiums: every premium traceable through auditable IF-THEN rules.',when:'Regulatory compliance required, interpretability critical, mixed data types, use as baseline before ensemble'},
+  rf:{title:'Random Forest Regression',color:'#0891b2',formula:'y-hat = (1/T) * sum_t Tree_t(x)',desc:'500 trees, each on random 80% of data and random feature subset. Final prediction = average. Errors cancel across trees. Includes free feature importance.',pros:'Very accurate | Robust to overfitting | Free feature importance | Works out of box',cons:'Black box (can\'t read a forest) | Slow real-time prediction | Memory intensive',use:'IMD monsoon: SST, ENSO, snow cover, solar activity. 3x better RMSE than single tree.',when:'Accuracy matters, many features, no explainability needed per prediction, strong default model'},
+  gbm:{title:'XGBoost / Gradient Boosting',color:'#dc2626',formula:'F_m(x) = F_{m-1}(x) + eta * h_m(x)',desc:'Sequential tree building. Each tree fits the negative gradient of the loss function (= residuals for MSE). Learning rate eta prevents overcorrection.',pros:'Best accuracy on tabular data | Any differentiable loss function | SHAP for explanations | Fast (LightGBM)',cons:'Many hyperparameters | Can overfit | Needs more data than linear models',use:'PhonePe fraud amount, IPL auction prices, Kaggle leaderboards.',when:'Maximum accuracy on tabular data, enough data (>1000 rows), production ML systems, competitions'}
+};
+
+var selAlgo=null;
+function showAlgo(id,btn){
+  var detail=document.getElementById('adetail');
+  var inner=document.getElementById('adetail-inner');
+  var d=algoData[id];
+  if(!d) return;
+  document.querySelectorAll('.ac').forEach(function(c){c.classList.remove('sel');});
+  if(selAlgo===id){detail.classList.remove('show');selAlgo=null;return;}
+  btn.classList.add('sel');
+  selAlgo=id;
+  var pros=d.pros.split(' | ').map(function(p){return '<li style="margin-bottom:3px">'+p+'</li>';}).join('');
+  var cons=d.cons.split(' | ').map(function(p){return '<li style="margin-bottom:3px">'+p+'</li>';}).join('');
+  inner.innerHTML='<div style="font-family:var(--mono);font-size:.64em;letter-spacing:.12em;color:'+d.color+';text-transform:uppercase;margin-bottom:9px">Algorithm Deep Dive</div>'
+    +'<h3 style="font-size:1.15em;font-weight:800;margin-bottom:11px;color:#fff">'+d.title+'</h3>'
+    +'<div style="background:#1a1a1a;border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:.85em;color:#7dd3fc;margin:9px 0;border-left:3px solid '+d.color+'">'+d.formula+'</div>'
+    +'<p style="color:#c7d2fe;font-size:.88em;line-height:1.75;margin-bottom:11px">'+d.desc+'</p>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">'
+    +'<div style="background:rgba(22,163,74,.12);border-radius:7px;padding:10px;border-left:3px solid #16a34a"><div style="font-family:var(--mono);font-size:.64em;color:#86efac;text-transform:uppercase;margin-bottom:6px">Strengths</div><ul style="font-size:.81em;color:#c7d2fe;line-height:1.7;padding-left:13px">'+pros+'</ul></div>'
+    +'<div style="background:rgba(220,38,38,.1);border-radius:7px;padding:10px;border-left:3px solid #dc2626"><div style="font-family:var(--mono);font-size:.64em;color:#fca5a5;text-transform:uppercase;margin-bottom:6px">Limitations</div><ul style="font-size:.81em;color:#c7d2fe;line-height:1.7;padding-left:13px">'+cons+'</ul></div>'
+    +'</div>'
+    +'<div style="background:#0a1628;border-radius:7px;padding:11px;border-left:4px solid '+d.color+';margin-bottom:9px"><div style="font-family:var(--mono);font-size:.63em;color:'+d.color+';text-transform:uppercase;margin-bottom:5px">Indian Use Case</div><div style="font-size:.84em;color:#e2e8f0;line-height:1.7">'+d.use+'</div></div>'
+    +'<div style="background:#111827;border-radius:7px;padding:9px 11px"><div style="font-family:var(--mono);font-size:.63em;color:#a5b4fc;margin-bottom:3px">Use When</div><div style="font-size:.83em;color:#c7d2fe;line-height:1.65">'+d.when+'</div></div>';
+  detail.classList.add('show');
+  detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── REGRESSION LINE CHART ────────────────────────────────────────
+var flatData=[{x:600,y:48},{x:650,y:53},{x:700,y:57},{x:780,y:71},{x:850,y:78},{x:900,y:87},{x:950,y:93},{x:1000,y:99},{x:1100,y:116},{x:1200,y:145},{x:1400,y:178},{x:1600,y:212},{x:1800,y:241}];
+
+function initLine(){
+  var canvas=document.getElementById('cv-line');
+  if(!canvas) return;
+  if(charts.line){try{charts.line.destroy();}catch(e){}}
+  charts.line=new Chart(canvas,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Flats',data:flatData.map(function(d){return{x:d.x,y:d.y};}),backgroundColor:'rgba(37,99,235,.75)',pointRadius:6},
+      {label:'Line',data:[],type:'line',fill:false,borderColor:'#e84c3d',borderWidth:2.5,pointRadius:0,tension:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{min:550,max:1900,title:{display:true,text:'Size (sq ft)',font:{size:10}}},
+              y:{title:{display:true,text:'Price (Rs Lakhs)',font:{size:10}}}}}
+  });
+  updateLine();
+}
+
+function updateLine(){
+  var m=+document.getElementById('sl-slope').value;
+  var b=+document.getElementById('sl-int').value;
+  document.getElementById('sv-slope').textContent=m.toLocaleString('en-IN');
+  document.getElementById('sv-int').textContent=(b/100000).toFixed(1)+'L';
+  if(!charts.line) return;
+  charts.line.data.datasets[1].data=[{x:550,y:(m*550+b)/100000},{x:1900,y:(m*1900+b)/100000}];
+  var mae=0,ssRes=0,ssTot=0;
+  var meanY=flatData.reduce(function(a,d){return a+d.y;},0)/flatData.length;
+  flatData.forEach(function(d){var p=(m*d.x+b)/100000;mae+=Math.abs(d.y-p);ssRes+=(d.y-p)*(d.y-p);ssTot+=(d.y-meanY)*(d.y-meanY);});
+  mae/=flatData.length;
+  var r2=1-ssRes/ssTot;
+  document.getElementById('m-mae').textContent=mae.toFixed(1);
+  document.getElementById('m-r2').textContent=r2.toFixed(3);
+  var v=document.getElementById('line-verdict');
+  if(v){
+    if(r2>0.93)v.innerHTML='<span style="color:#86efac">&#127942; Excellent! R&sup2; &gt; 0.93. Great model!</span>';
+    else if(r2>0.82)v.innerHTML='<span style="color:#fde68a">&#128200; Good fit! Try adjusting slope further.</span>';
+    else if(r2>0.6)v.innerHTML='<span style="color:#fca5a5">&#128201; Decent. Slope or intercept still off.</span>';
+    else v.innerHTML='<span style="color:#f87171">&#128201; Poor fit. Try moving slope toward 6,000-7,500.</span>';
+  }
+  charts.line.update('none');
+}
+
+// ── REGULARIZATION CHART ─────────────────────────────────────────
+var featNames=['CIBIL Score','Income','Age','City Tier','Employment','EMI History','Property Val','NOISE &#9888;'];
+var trueCoefs=[0.82,0.90,-0.28,0.61,0.72,0.53,0.87,0.06];
+
+function initReg(){
+  var canvas=document.getElementById('cv-reg');
+  if(!canvas) return;
+  if(charts.reg){try{charts.reg.destroy();}catch(e){}}
+  charts.reg=new Chart(canvas,{
+    type:'bar',
+    data:{labels:featNames,datasets:[{label:'Coef',data:trueCoefs.slice(),
+      backgroundColor:trueCoefs.map(function(_,i){return i===7?'rgba(239,68,68,.6)':'rgba(37,99,235,.7)';}),
+      borderColor:trueCoefs.map(function(_,i){return i===7?'#ef4444':'#2563eb';}),borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:-0.15,max:1.0,title:{display:true,text:'Coefficient',font:{size:10}}},x:{ticks:{font:{size:9}}}}}
+  });
+}
+
+function setRT(type){
+  regType=type;
+  var r=document.getElementById('rt-ridge');
+  var l=document.getElementById('rt-lasso');
+  if(r){r.style.background=type==='ridge'?'var(--ink)':'#fff';r.style.color=type==='ridge'?'#fff':'var(--ink)';}
+  if(l){l.style.background=type==='lasso'?'var(--ink)':'#fff';l.style.color=type==='lasso'?'#fff':'var(--ink)';}
+  updateReg();
+}
+
+function updateReg(){
+  var raw=+document.getElementById('sl-lam').value;
+  var lam=raw/10;
+  document.getElementById('sv-lam').textContent=lam.toFixed(1);
+  var coefs;
+  if(regType==='ridge'){
+    var s=1/(1+lam*0.14);
+    coefs=trueCoefs.map(function(c){return c*s;});
+  } else {
+    var t=lam*0.011;
+    coefs=trueCoefs.map(function(c){var sign=c>=0?1:-1;return Math.max(0,Math.abs(c)-t)*sign;});
+  }
+  if(charts.reg){
+    charts.reg.data.datasets[0].data=coefs;
+    charts.reg.data.datasets[0].backgroundColor=coefs.map(function(c,i){
+      if(Math.abs(c)<0.005) return 'rgba(107,114,128,.3)';
+      return i===7?'rgba(239,68,68,.6)':'rgba(37,99,235,.7)';
+    });
+    charts.reg.update('none');
+  }
+  var zeroed=coefs.filter(function(c){return Math.abs(c)<0.005;}).length;
+  var html='<div style="font-size:.78em;line-height:1.85;color:#444">';
+  featNames.forEach(function(name,i){
+    var v=coefs[i],isZ=Math.abs(v)<0.005,isN=i===7;
+    html+='<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #eee;'+(isZ?'opacity:.4':'')+'"><span style="'+(isN?'color:var(--a1)':'')+'">'+(isN?'&#9888; ':'')+name+'</span><span style="font-family:var(--mono);font-size:.82em;'+(isZ?'color:#aaa':isN?'color:var(--a1)':'color:var(--a2)')+'">'+( isZ?'0.000 KILLED':v.toFixed(3))+'</span></div>';
+  });
+  html+='</div>';
+  if(regType==='lasso'&&zeroed>0) html+='<div class="ok-strip" style="margin-top:6px;font-size:.79em">Lasso killed '+zeroed+' feature'+(zeroed>1?'s':'')+' &mdash; automatic selection!</div>';
+  if(regType==='lasso'&&coefs[7]<0.005) html+='<div class="info" style="margin-top:4px;font-size:.79em">&#127919; Noise feature correctly eliminated!</div>';
+  var d=document.getElementById('coef-list');
+  if(d) d.innerHTML=html;
+  var vd=document.getElementById('reg-verdict');
+  if(vd){
+    if(regType==='ridge') vd.innerHTML='Ridge: <strong>ALL features kept</strong>, coefficients shrinking toward zero. Even the noise feature stays (but shrinks). Good for correlated features.';
+    else if(zeroed===0) vd.innerHTML='Lasso: &lambda; too small. Increase &lambda; to start killing features.';
+    else vd.innerHTML='Lasso: <strong>'+zeroed+' features killed</strong>. Model automatically selected '+(8-zeroed)+' features. The noise feature should go first!';
+  }
+}
+
+// ── POLYNOMIAL OVERFIT ───────────────────────────────────────────
+var txs=[1,2,3,4,5,6,7,8,9,10],tys=[2.1,3.8,6.2,8.1,9.9,11.5,13.2,15.8,17.1,19.3];
+var testxs=[1.5,3.5,5.5,7.5,9.5,11],testys=[2.9,7.1,10.7,14.5,18.1,22.0];
+
+function gaussElim(A,b){
+  var n=b.length,M=A.map(function(row,i){return row.slice().concat([b[i]]);});
+  for(var i=0;i<n;i++){
+    var mx=i;
+    for(var k=i+1;k<n;k++) if(Math.abs(M[k][i])>Math.abs(M[mx][i])) mx=k;
+    var tmp=M[i];M[i]=M[mx];M[mx]=tmp;
+    for(var k=i+1;k<n;k++){
+      if(Math.abs(M[i][i])<1e-12) continue;
+      var f=M[k][i]/M[i][i];
+      for(var j=i;j<=n;j++) M[k][j]-=f*M[i][j];
+    }
+  }
+  var x=new Array(n).fill(0);
+  for(var i=n-1;i>=0;i--){
+    if(Math.abs(M[i][i])<1e-12){x[i]=0;continue;}
+    x[i]=M[i][n];
+    for(var j=i+1;j<n;j++) x[i]-=M[i][j]*x[j];
+    x[i]/=M[i][i];
+  }
+  return x;
+}
+function polyFit(xs,ys,deg){
+  var n=xs.length,p=deg+1;
+  var X=xs.map(function(x){return Array.from({length:p},function(_,k){return Math.pow(x,k);});});
+  var Xt=X[0].map(function(_,c){return X.map(function(r){return r[c];});});
+  var XtX=Xt.map(function(row){return X[0].map(function(_,j){return row.reduce(function(s,_,k){return s+row[k]*X[k][j];},0);});});
+  var Xty=Xt.map(function(row){return row.reduce(function(s,v,k){return s+v*ys[k];},0);});
+  return gaussElim(XtX,Xty);
+}
+function evalPoly(coef,x){return coef.reduce(function(s,c,k){return s+c*Math.pow(x,k);},0);}
+function r2(actual,pred){
+  var mean=actual.reduce(function(a,b){return a+b;},0)/actual.length;
+  var ssTot=actual.reduce(function(s,y){return s+(y-mean)*(y-mean);},0);
+  var ssRes=actual.reduce(function(s,y,i){return s+(y-pred[i])*(y-pred[i]);},0);
+  return Math.max(-2,1-ssRes/ssTot);
+}
+
+function initPoly(){
+  var canvas=document.getElementById('cv-poly');
+  if(!canvas) return;
+  if(charts.poly){try{charts.poly.destroy();}catch(e){}}
+  charts.poly=new Chart(canvas,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Train',data:txs.map(function(x,i){return{x:x,y:tys[i]};}),backgroundColor:'rgba(37,99,235,.85)',pointRadius:6},
+      {label:'Test',data:testxs.map(function(x,i){return{x:x,y:testys[i]};}),backgroundColor:'rgba(239,68,68,.85)',pointStyle:'triangle',pointRadius:7},
+      {label:'Fit',data:[],type:'line',fill:false,borderColor:'#16a34a',borderWidth:2,pointRadius:0,tension:0.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:9}}}},
+      scales:{x:{min:0,max:12},y:{min:-15,max:40}}}
+  });
+  updatePoly();
+}
+
+function updatePoly(){
+  var deg=+document.getElementById('sl-deg').value;
+  document.getElementById('sv-deg').textContent=deg;
+  var coef=polyFit(txs,tys,Math.min(deg,txs.length-1));
+  var xs=Array.from({length:60},function(_,i){return i*12/59;});
+  var fit=xs.map(function(x){return{x:x,y:evalPoly(coef,x)};});
+  var trainPreds=txs.map(function(x){return evalPoly(coef,x);});
+  var testPreds=testxs.map(function(x){return evalPoly(coef,x);});
+  var tr=r2(tys,trainPreds),te=r2(testys,testPreds);
+  document.getElementById('p-trainr2').textContent=tr.toFixed(3);
+  document.getElementById('p-testr2').textContent=te.toFixed(3);
+  var v=document.getElementById('poly-verdict');
+  if(v){
+    if(deg<=2) v.innerHTML='<span style="color:#86efac">&#9989; Healthy! Small gap. Model generalises well.</span>';
+    else if(deg<=4) v.innerHTML='<span style="color:#fde68a">&#9888;&#65039; Mild overfitting. Test R&sup2; starting to drop.</span>';
+    else if(deg<=6) v.innerHTML='<span style="color:#fca5a5">&#128680; Significant overfitting! Deploy this and real errors will be 5x worse than training metrics suggest.</span>';
+    else v.innerHTML='<span style="color:#f87171">&#128165; SEVERE overfitting! Train R&sup2; near 1.0 (memorised everything) but Test R&sup2; collapsed. Useless in production!</span>';
+  }
+  if(charts.poly){charts.poly.data.datasets[2].data=fit;charts.poly.update('none');}
+}
+
+// ── DRAG-DROP ────────────────────────────────────────────────────
+var dragging=null;
+var ddScores={ridge:false,lasso:false,enet:false};
+
+function ds(e){dragging=e.target.getAttribute('data-key');}
+function dov(e){e.preventDefault();e.currentTarget.classList.add('over');}
+function drp(e,zone){
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  if(!dragging) return;
+  var correct=e.currentTarget.getAttribute('data-correct');
+  var item=document.querySelector('[data-key="'+dragging+'"]');
+  if(item&&!item.classList.contains('placed')){
+    item.classList.add('placed');
+    var clone=item.cloneNode(true);
+    clone.style.cursor='default';
+    clone.removeAttribute('draggable');
+    if(dragging===correct){
+      e.currentTarget.classList.add('correct');
+      clone.style.borderColor='var(--a3)';
+      e.currentTarget.appendChild(clone);
+      ddScores[zone]=true;
+      checkDD();
+    } else {
+      e.currentTarget.classList.add('wrong');
+      clone.style.borderColor='var(--a1)';
+      e.currentTarget.appendChild(clone);
+      setTimeout(function(){
+        e.currentTarget.classList.remove('wrong');
+        e.currentTarget.innerHTML='<span style="color:#aaa;font-size:.8em">Wrong! Try another.</span>';
+        item.classList.remove('placed');
+      },1500);
+    }
+  }
+  dragging=null;
+}
+
+function checkDD(){
+  var all=Object.values(ddScores).every(Boolean);
+  var res=document.getElementById('dd-result');
+  if(all&&res){
+    res.innerHTML='<div class="ok-strip">&#127942; <strong>Perfect match!</strong> All three scenarios correctly placed. +20 XP!</div>';
+    if(!answered['dd-complete']){answered['dd-complete']=true;addXP(20);}
+  }
+}
+
+// ── ALGO GAME ────────────────────────────────────────────────────
+var agQs=[
+  {q:'Predict BSE Sensex daily closing value. Market crash days are outliers. Non-linear patterns.',opts:['SVR (RBF Kernel)','Simple Linear Reg','Lasso','Decision Tree'],ans:0,why:'SVR with RBF kernel handles non-linearity AND is robust to crash-day outliers which would destroy linear regression.'},
+  {q:'Explain how 12 HR factors affect employee salary. HR head needs: "Each year of experience adds Rs X."',opts:['XGBoost','Multiple Linear Regression','Random Forest','Neural Network'],ans:1,why:'Multiple Linear Regression gives direct interpretable coefficients. XGBoost and Random Forest cannot give "each extra year adds Rs X" naturally.'},
+  {q:'Predict electricity demand. Temperature shows a U-shape: high demand in summer (AC) AND winter (heating).',opts:['Ridge Regression','Polynomial Regression','SVR','Linear Regression'],ans:1,why:'Polynomial Regression captures U-shaped curves. A straight line cannot fit a U-shape. Degree 2 polynomial is perfect here.'},
+  {q:'Win Kaggle competition on house price prediction. 300+ engineered features. Pure accuracy needed.',opts:['Lasso','Decision Tree','XGBoost/LightGBM','SVR'],ans:2,why:'XGBoost/LightGBM consistently tops Kaggle tabular competitions. Best accuracy on structured data with many features.'}
+];
+var agIdx=0,agDone=false;
+
+function initAlgoGame(){
+  agIdx=0;agDone=false;renderAG();
+}
+
+function renderAG(){
+  var d=document.getElementById('ag-q');
+  var o=document.getElementById('ag-opts');
+  var s=document.getElementById('ag-score');
+  var n=document.getElementById('ag-next');
+  var fb=document.getElementById('ag-fb');
+  if(!d) return;
+  if(agIdx>=agQs.length){
+    d.innerHTML='<div class="ok-strip">&#127942; You completed the Algorithm Game! (+25 XP)</div>';
+    o.innerHTML='';
+    if(s) s.textContent='';
+    if(n) n.style.display='none';
+    if(!answered['algo-game']){answered['algo-game']=true;addXP(25);}
+    return;
+  }
+  var q=agQs[agIdx];
+  if(d) d.innerHTML='<div style="font-weight:700;margin-bottom:8px;font-size:.9em">Scenario '+(agIdx+1)+' of '+agQs.length+':</div><div style="font-size:.87em;line-height:1.65;color:#444">'+q.q+'</div>';
+  if(o) o.innerHTML=q.opts.map(function(opt,i){return '<div class="qopt" id="ag-opt-'+i+'" onclick="pickAG('+i+')" style="cursor:pointer"><div class="qm">'+'ABCD'[i]+'</div>'+opt+'</div>';}).join('');
+  if(s) s.textContent='Question '+(agIdx+1)+' of '+agQs.length;
+  if(n) n.style.display='none';
+  if(fb){fb.style.display='none';fb.className='';}
+}
+
+function pickAG(idx){
+  var q=agQs[agIdx];
+  var fb=document.getElementById('ag-fb');
+  var n=document.getElementById('ag-next');
+  document.querySelectorAll('#ag-opts .qopt').forEach(function(o){o.style.pointerEvents='none';o.classList.add('dim');});
+  var chosen=document.getElementById('ag-opt-'+idx);
+  var correct_el=document.getElementById('ag-opt-'+q.ans);
+  if(chosen) chosen.classList.remove('dim');
+  if(idx===q.ans){
+    if(chosen) chosen.classList.add('correct');
+    if(fb){fb.style.display='block';fb.className='ok-strip';fb.innerHTML='&#10003; Correct! '+q.why;}
+  } else {
+    if(chosen){chosen.classList.remove('dim');chosen.classList.add('wrong');}
+    if(correct_el){correct_el.classList.remove('dim');correct_el.classList.add('correct');}
+    if(fb){fb.style.display='block';fb.className='danger';fb.innerHTML='&#10007; '+q.why;}
+  }
+  if(n) n.style.display='inline-flex';
+}
+
+function agNext(){
+  agIdx++;
+  renderAG();
+  var fb=document.getElementById('ag-fb');
+  if(fb){fb.style.display='none';}
+}
+
+// ── DIAGNOSIS GAME ───────────────────────────────────────────────
+var dgCases=[
+  {title:'Case 1: Property Valuation Model',metrics:'Train R&sup2;: 0.97 | Test R&sup2;: 0.52 | Train RMSE: Rs 1.2L | Test RMSE: Rs 9.8L',q:'Diagnose this model:',opts:['Healthy model, acceptable performance','Severe overfitting &mdash; memorised training noise','Underfitting &mdash; too simple','Data is too small to conclude'],ans:1,fix:'Huge gap (0.97 vs 0.52 R&sup2;, 8x RMSE jump) = severe overfitting. Fixes: Lasso/Ridge regularisation, reduce features, cross-validate during development.'},
+  {title:'Case 2: Insurance Premium Model',metrics:'Train R&sup2;: 0.61 | Test R&sup2;: 0.58 | Train RMSE: Rs 840 | Test RMSE: Rs 870',q:'Diagnose this model:',opts:['Severe overfitting','Underfitting &mdash; model too simple for the task','Healthy model with consistent performance','Random noise, no pattern exists'],ans:2,fix:'Only 3% R&sup2; gap and similar RMSE on train and test. Model is consistent. However R&sup2;=0.61 suggests there is room to improve accuracy by adding features or using a more complex model.'},
+  {title:'Case 3: Delivery Time Model',metrics:'Train R&sup2;: 0.34 | Test R&sup2;: 0.31 | Train RMSE: 18 min | Test RMSE: 19 min',q:'Diagnose this model:',opts:['Good model, consistent performance','Severe overfitting','Underfitting &mdash; needs more features or a complex model','Perfect model'],ans:2,fix:'Consistent but consistently BAD. R&sup2; of 0.34 means 66% of delivery time variance is unexplained. Classic underfitting. Add more features (traffic, restaurant load, rider speed) or switch to Random Forest / XGBoost.'},
+  {title:'Case 4: Crop Yield Model',metrics:'Train R&sup2;: 0.89 | CV R&sup2;: 0.86 | Train RMSE: 45 kg/ha | CV RMSE: 48 kg/ha',q:'Diagnose this model:',opts:['Overfitting','Underfitting','Production-ready healthy model','Cannot determine from these metrics'],ans:2,fix:'Only 3% R&sup2; gap between training and cross-validation. Consistent, strong performance (0.86 CV R&sup2; is excellent for crop yield). This model is production-ready. Always use CV score for final reporting.'}
+];
+var dgIdx=0;
+
+function initDiagGame(){dgIdx=0;renderDG();}
+
+function renderDG(){
+  var c=dgCases[dgIdx];
+  var caseEl=document.getElementById('dg-case');
+  var optsEl=document.getElementById('dg-opts');
+  var prog=document.getElementById('dg-prog');
+  var fb=document.getElementById('dg-fb');
+  var nx=document.getElementById('dg-next');
+  if(!caseEl) return;
+  caseEl.innerHTML='<div style="font-weight:800;margin-bottom:8px;color:var(--a2)">'+c.title+'</div><div style="font-family:var(--mono);font-size:.76em;background:#f8f8f8;padding:10px;border-radius:7px;line-height:2;color:#333">'+c.metrics+'</div><div style="margin-top:9px;font-size:.89em;font-weight:700">'+c.q+'</div>';
+  if(optsEl) optsEl.innerHTML=c.opts.map(function(o,i){return '<div class="qopt" id="dg-opt-'+i+'" onclick="pickDG('+i+')"><div class="qm">'+'ABCD'[i]+'</div>'+o+'</div>';}).join('');
+  if(prog) prog.textContent='Case '+(dgIdx+1)+' of '+dgCases.length;
+  if(fb){fb.style.display='none';}
+  if(nx) nx.textContent=dgIdx<dgCases.length-1?'Next Case &rarr;':'Finish!';
+}
+
+function pickDG(idx){
+  var c=dgCases[dgIdx];
+  var fb=document.getElementById('dg-fb');
+  document.querySelectorAll('#dg-opts .qopt').forEach(function(o){o.style.pointerEvents='none';o.classList.add('dim');});
+  var el=document.getElementById('dg-opt-'+idx);
+  var cor=document.getElementById('dg-opt-'+c.ans);
+  if(el) el.classList.remove('dim');
+  if(idx===c.ans){
+    if(el) el.classList.add('correct');
+    if(fb){fb.style.display='block';fb.className='ok-strip';fb.innerHTML='&#10003; Correct! '+c.fix;}
+    if(!answered['dg-'+dgIdx]){answered['dg-'+dgIdx]=true;addXP(8);}
+  } else {
+    if(el){el.classList.remove('dim');el.classList.add('wrong');}
+    if(cor){cor.classList.remove('dim');cor.classList.add('correct');}
+    if(fb){fb.style.display='block';fb.className='danger';fb.innerHTML='&#10007; '+c.fix;}
+  }
+}
+
+function dgNext(){
+  if(dgIdx<dgCases.length-1){dgIdx++;renderDG();}
+  else{
+    var c=document.getElementById('dg-case');
+    var o=document.getElementById('dg-opts');
+    var fb=document.getElementById('dg-fb');
+    var n=document.getElementById('dg-next');
+    if(c) c.innerHTML='<div class="ok-strip">&#127942; <strong>Diagnosis complete!</strong> You are now an ML model doctor.</div>';
+    if(o) o.innerHTML='';
+    if(fb) fb.style.display='none';
+    if(n) n.style.display='none';
+  }
+}
+
+// ── TROPHY ───────────────────────────────────────────────────────
+function showFinal(){
+  document.getElementById('final-btn-wrap').style.display='none';
+  document.getElementById('trophy-wrap').style.display='block';
+  document.getElementById('final-score').textContent=totalXP+' / '+maxXP+' XP';
+  var tgrid=document.getElementById('tgrid');
+  var items=[
+    {i:'&#128207;',l:'Linear Reg'},
+    {i:'&#128737;&#65039;',l:'Regularization'},
+    {i:'&#128640;',l:'Advanced Algos'},
+    {i:'&#9878;&#65039;',l:'Bias-Variance'},
+    {i:'&#127942;',l:'Total: '+totalXP+' XP'}
+  ];
+  if(tgrid) tgrid.innerHTML=items.map(function(x){return '<div class="tc"><div class="tci">'+x.i+'</div><div class="tcl">'+x.l+'</div></div>';}).join('');
+  document.getElementById('b7').classList.add('lit');
+  firework();
+}
+
+function firework(){
+  var e=['&#127881;','&#11088;','&#10024;','&#127775;','&#128640;','&#127942;','&#128293;'];
+  for(var i=0;i<12;i++){
+    (function(i){setTimeout(function(){
+      var el=document.createElement('div');
+      el.className='cf';
+      el.innerHTML=e[Math.floor(Math.random()*e.length)];
+      el.style.left=Math.random()*100+'vw';
+      el.style.animationDuration=(1.3+Math.random()*1.5)+'s';
+      el.style.fontSize=(0.9+Math.random()*0.9)+'em';
+      document.body.appendChild(el);
+      setTimeout(function(){el.remove();},3000);
+    },i*90);})(i);
+  }
+}
+
+// ── PARTICLES ────────────────────────────────────────────────────
+function initBG(){
+  var c=document.getElementById('bg');
+  if(!c) return;
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  var ctx=c.getContext('2d');
+  var dots=Array.from({length:25},function(){return{x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:.7+Math.random()*1.3};});
+  (function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    dots.forEach(function(d){
+      d.x+=d.vx;d.y+=d.vy;
+      if(d.x<0)d.x=c.width;if(d.x>c.width)d.x=0;
+      if(d.y<0)d.y=c.height;if(d.y>c.height)d.y=0;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+      ctx.fillStyle='#2563eb';ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  })();
+}
+
+// ── POLYNOMIAL SPOT-THE-CURVE GAME ────────────────────────────────
+var pgScenarios=[
+  {
+    title:'&#128722; Flipkart Flash Sale — Discount vs Orders',
+    data:'5% off: 800 orders | 15% off: 2,100 orders | 25% off: 3,800 orders | 40% off: 3,600 orders | 60% off: 2,800 orders',
+    pattern:'Orders rise, peak around 25%, then DROP as customers doubt quality.',
+    q:'What shape is this relationship?',
+    opts:['Straight line (Degree 1) — orders keep rising with discount','Curve (Degree 2) — orders rise then fall, forming an inverted-U','No pattern — data is random','Exponential — orders double with every 10% discount'],
+    ans:1,
+    why:'Classic inverted-U (parabola). Too little discount = few buyers. Optimal discount = peak orders. Too much discount = customers suspicious of quality + profit margin destroyed. Degree-2 polynomial captures this perfectly.'
+  },
+  {
+    title:'&#9728;&#65039; MSEDCL Mumbai — Temperature vs Electricity Demand',
+    data:'5°C: 8,200 MW | 15°C: 5,100 MW | 22°C: 4,800 MW | 30°C: 6,400 MW | 38°C: 9,100 MW',
+    pattern:'Demand is HIGH in both very cold AND very hot weather. Middle temperatures = lowest demand.',
+    q:'Which regression model fits this data?',
+    opts:['Linear Regression — demand goes up as temperature rises','Polynomial Degree 2 — U-shaped curve: high at both extremes, low in middle','No ML needed — this is just seasonal data','Lasso Regression — reduces irrelevant features'],
+    ans:1,
+    why:'Perfect U-shape! Cold = heating demand spike. Hot = AC demand spike. Mild = lowest demand. A straight line would predict demand only rises OR only falls with temperature — completely wrong. Only a degree-2 polynomial captures the U-shape.'
+  },
+  {
+    title:'&#127968; MagicBricks — House Size vs Price',
+    data:'500sqft: ₹45L | 800sqft: ₹72L | 1200sqft: ₹108L | 1600sqft: ₹144L | 2000sqft: ₹180L',
+    pattern:'Every extra 100 sqft adds almost exactly ₹9L. Very consistent.',
+    q:'What regression model fits best?',
+    opts:['Polynomial Degree 2 — prices curve as size increases','Linear Regression — a straight line fits this very well','Polynomial Degree 4 — complex relationship needs higher degree','SVR — outlier flats might exist'],
+    ans:1,
+    why:'This IS a straight line! Price increases proportionally with size (₹9L per 100 sqft consistently). This is the classic case where linear regression works perfectly. Not every relationship needs a polynomial — always visualise your data first!'
+  },
+  {
+    title:'&#128640; Ola Cabs — Years of Experience vs Driver Rating',
+    data:'0 years: 3.8 stars | 1 year: 4.1 stars | 2 years: 4.4 stars | 4 years: 4.6 stars | 7 years: 4.7 stars | 10 years: 4.71 stars',
+    pattern:'Rating improves fast at first, then slows down and plateaus.',
+    q:'This looks like which pattern?',
+    opts:['Linear — rating rises at constant pace with experience','Polynomial Degree 2 — rises fast then curves and slows (like a half-parabola)','U-shape — rating dips in the middle','No relationship between experience and rating'],
+    ans:1,
+    why:'Diminishing returns! A new driver improves rapidly (learning curve). An experienced driver has already mastered the job — improvement slows. This "fast rise then plateau" pattern is a classic degree-2 (or log) curve. A linear model would overestimate how much year 8 of experience adds over year 7.'
+  },
+  {
+    title:'&#127757; India GDP — Year vs GDP (Trillions $)',
+    data:'2000: $0.48T | 2005: $0.82T | 2010: $1.66T | 2015: $2.10T | 2020: $2.66T | 2023: $3.73T',
+    pattern:'GDP growing but accelerating — the growth itself is growing.',
+    q:'Which model would best predict India\'s GDP trajectory?',
+    opts:['Linear Regression — GDP grows by the same amount each year','Polynomial Degree 2 or 3 — captures the accelerating growth curve','Lasso — reduces noise in economic data','Decision Tree — splits into pre/post-reform periods'],
+    ans:1,
+    why:'GDP growth is non-linear — it accelerates over time (compounding effect + economic reforms + demographic dividend). A linear model would consistently underestimate GDP in fast-growth periods. A degree-2 or degree-3 polynomial, or even an exponential model, captures the acceleration.'
+  }
+];
+var pgIdx=0,pgAnswered=false;
+
+function initPolyGame(){pgIdx=0;pgAnswered=false;renderPG();}
+
+function renderPG(){
+  var s=pgScenarios[pgIdx];
+  var sc=document.getElementById('pg-scenario');
+  var op=document.getElementById('pg-opts');
+  var fb=document.getElementById('pg-fb');
+  var nx=document.getElementById('pg-next');
+  var pr=document.getElementById('pg-prog');
+  if(!sc) return;
+  if(pgIdx>=pgScenarios.length){
+    sc.innerHTML='<div class="ok-strip">&#127942; <strong>Curve Spotter complete!</strong> You can now identify when polynomial regression is needed. +15 XP!</div>';
+    if(op) op.innerHTML='';
+    if(nx) nx.style.display='none';
+    if(!answered['poly-game']){answered['poly-game']=true;addXP(15);}
+    return;
+  }
+  sc.innerHTML='<div style="font-weight:800;font-size:.93em;margin-bottom:7px">'+s.title+'</div>'
+    +'<div style="font-family:var(--mono);font-size:.73em;background:#1a1a1a;color:#7dd3fc;padding:9px 11px;border-radius:7px;line-height:1.9;margin-bottom:8px">'+s.data+'</div>'
+    +'<div style="font-size:.83em;color:#555;font-style:italic;margin-bottom:8px">Pattern: '+s.pattern+'</div>'
+    +'<div style="font-size:.87em;font-weight:700">'+s.q+'</div>';
+  if(op) op.innerHTML=s.opts.map(function(o,i){return '<div class="qopt" id="pg-opt-'+i+'" onclick="pickPG('+i+')"><div class="qm">'+'ABCD'[i]+'</div>'+o+'</div>';}).join('');
+  if(fb){fb.style.display='none';}
+  if(pr) pr.textContent='Scenario '+(pgIdx+1)+' of '+pgScenarios.length;
+  if(nx) nx.style.display='none';
+  pgAnswered=false;
+}
+
+function pickPG(idx){
+  if(pgAnswered) return;
+  pgAnswered=true;
+  var s=pgScenarios[pgIdx];
+  var fb=document.getElementById('pg-fb');
+  var nx=document.getElementById('pg-next');
+  document.querySelectorAll('#pg-opts .qopt').forEach(function(o){o.style.pointerEvents='none';o.classList.add('dim');});
+  var el=document.getElementById('pg-opt-'+idx);
+  var cor=document.getElementById('pg-opt-'+s.ans);
+  if(el) el.classList.remove('dim');
+  if(idx===s.ans){
+    if(el) el.classList.add('correct');
+    if(fb){fb.style.display='block';fb.className='ok-strip';fb.innerHTML='&#10003; Correct! '+s.why;}
+    if(!answered['pg-'+pgIdx]){answered['pg-'+pgIdx]=true;addXP(3);}
+  } else {
+    if(el){el.classList.remove('dim');el.classList.add('wrong');}
+    if(cor){cor.classList.remove('dim');cor.classList.add('correct');}
+    if(fb){fb.style.display='block';fb.className='danger';fb.innerHTML='&#10007; '+s.why;}
+  }
+  if(nx) nx.style.display='inline-flex';
+}
+
+function pgNext(){
+  pgIdx++;
+  renderPG();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  initBG();
+  initLine();
+  // init games when accordions open
+  var agBody=document.getElementById('algo-game-body');
+  if(agBody){var ob1=new MutationObserver(function(m){m.forEach(function(mu){if(agBody.classList.contains('open')&&!agDone){initAlgoGame();agDone=true;}});});ob1.observe(agBody,{attributes:true,attributeFilter:['class']});}
+  var dgBody=document.getElementById('diag-game-body');
+  var dgInited=false;
+  var pgInited=false;
+  // Init poly game when tab becomes visible
+  document.querySelectorAll('.st').forEach(function(tab){
+    tab.addEventListener('click', function(){
+      if(this.textContent.indexOf('Polynomial')>-1 && !pgInited){
+        pgInited=true;
+        setTimeout(initPolyGame,100);
+      }
+    });
+  });
+  if(dgBody){var ob2=new MutationObserver(function(m){m.forEach(function(mu){if(dgBody.classList.contains('open')&&!dgInited){initDiagGame();dgInited=true;}});});ob2.observe(dgBody,{attributes:true,attributeFilter:['class']});}
+});
+
+window.addEventListener('resize',function(){initBG();});
+</script>
+</body>
+</html>
